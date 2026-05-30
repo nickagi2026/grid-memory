@@ -1,0 +1,29 @@
+# Grid Memory Server — quick start
+#
+#   docker compose up -d
+#   curl http://localhost:8080/health
+#
+# Or with a persistent volume:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: "3.8"
+services:
+  grid-memory:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - grid-data:/data
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - GRID_STORE_DIR=/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  grid-data:

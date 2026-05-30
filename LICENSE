@@ -1,0 +1,44 @@
+Business Source License 1.1
+
+License text copyright (c) 2017 MariaDB Corporation Ab, All Rights Reserved.
+"Business Source License" is a trademark of MariaDB Corporation Ab.
+
+-----------------------------------------------------------------------------
+
+Parameters
+
+Licensor:             Nick Stoianov / CriticalPathFoundry (nick@criticalpathfoundry.com)
+Licensed Work:        Grid Memory / MIKE Intelligence, Version 1.2.0
+Change Date:          2030-05-30
+Change License:       Apache License, Version 2.0
+
+-----------------------------------------------------------------------------
+
+Terms
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work. The
+Licensor may make the Licensed Work available under additional terms
+separately.
+
+Non-production use means use of the Licensed Work that is not directed
+toward generating revenue, or that is for personal or academic purposes
+only.
+
+Production use of the Licensed Work is subject to the Additional Use Grant
+below.
+
+Additional Use Grant:
+
+You may use the Licensed Work for any purpose other than offering a
+commercial hosted service that competes directly with Grid Memory.
+You may use the Licensed Work in production systems that are not
+hosted services.
+
+For the avoidance of doubt: you may use Grid Memory in your own agent
+systems, your clients' systems, or any non-competing product, without
+restriction.
+
+Change Date: 2030-05-30
+
+Change License: Apache License, Version 2.0

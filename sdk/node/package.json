@@ -1,0 +1,26 @@
+{
+  "name": "grid-memory",
+  "version": "1.2.0",
+  "description": "Shared persistent memory for multi-agent teams \u2014 Node.js SDK",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:watch": "node --test --watch test/*.test.js"
+  },
+  "keywords": [
+    "agent",
+    "memory",
+    "shared-memory",
+    "multi-agent",
+    "grid"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIKE Operations Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0d11; --bg2: #13161c; --card: #1a1e28; --border: #272d3d;
+    --text: #e8eaed; --text2: #9aa0b0; --accent: #4f7bff;
+    --green: #34d399; --yellow: #fbbf24; --red: #f87171; --cyan: #22d3ee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+         background: var(--bg); color: var(--text); padding: 20px; }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  h2 { font-size: 1.1rem; color: var(--text2); font-weight: 400; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .header-left h1 { font-size: 1.3rem; } .header-left h2 { font-size: 0.9rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .stat-card .label { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .value { font-size: 1.8rem; font-weight: 600; margin-top: 4px; }
+  .stat-card .sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .card h3 { font-size: 0.85rem; color: var(--text2); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .pulse.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .pulse.yellow { background: var(--yellow); }
+  .pulse.red { background: var(--red); }
+  .opportunity-item, .lesson-item, .pattern-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .opportunity-item:last-child, .lesson-item:last-child, .pattern-item:last-child { border: none; }
+  .opp-value { color: var(--green); font-weight: 500; }
+  .opp-stage { font-size: 0.75rem; color: var(--text2); }
+  .bar-container { background: var(--bg); border-radius: 4px; height: 8px; overflow: hidden; margin-top: 4px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.cyan { background: var(--cyan); }
+  .bar-fill.yellow { background: var(--yellow); }
+  .bar-fill.accent { background: var(--accent); }
+  .error-msg { color: var(--red); font-size: 0.85rem; padding: 20px; text-align: center; }
+  .loading { color: var(--text2); font-size: 0.85rem; padding: 20px; text-align: center; }
+  .refresh-btn { background: var(--accent); color: #fff; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+  .refresh-btn:hover { opacity: 0.9; }
+  @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="header"><div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+  <input id="authKey" placeholder="API Key (optional)" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-size:0.8rem;width:200px" />
+  <input id="authWs" placeholder="Workspace (optional)" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-size:0.8rem;width:150px" />
+  <button onclick="saveAuth()" style="background:var(--accent);color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem">Save</button>
+  <span id="authStatus" style="font-size:0.75rem;color:var(--text2)"></span>
+</div>
+  <div class="header-left">
+    <h1>MIKE Operations Dashboard</h1>
+    <h2 id="subtitle">Loading...</h2>
+  </div>
+  <div><button class="refresh-btn" onclick="refresh()">Refresh</button></div>
+</div>
+
+<div class="stats-grid" id="statsGrid"></div>
+
+<div class="grid-2">
+  <div class="card" id="opportunitiesCard"><h3>Opportunity Pipeline</h3><div class="loading">Loading...</div></div>
+  <div class="card" id="radarCard"><h3>Opportunity Radar</h3><div class="loading">Loading...</div></div>
+</div>
+
+<div class="grid-3">
+  <div class="card" id="lessonsCard"><h3>Recent Lessons</h3><div class="loading">Loading...</div></div>
+  <div class="card" id="patternsCard"><h3>Patterns &amp; Accelerators</h3><div class="loading">Loading...</div></div>
+  <div class="card" id="readinessCard"><h3>Readiness Scores</h3><div class="loading">Loading...</div></div>
+</div>
+
+<script>
+const API = '';
+function saveAuth() {
+  const key = document.getElementById('authKey').value;
+  const ws = document.getElementById('authWs').value;
+  if (key) localStorage.setItem('grid_api_key', key); else localStorage.removeItem('grid_api_key');
+  if (ws) localStorage.setItem('grid_workspace', ws); else localStorage.removeItem('grid_workspace');
+  document.getElementById('authStatus').textContent = 'Saved';
+  setTimeout(() => document.getElementById('authStatus').textContent = '', 2000);
+  refresh();
+}
+// Load saved auth
+window.addEventListener('DOMContentLoaded', () => {
+  const k = localStorage.getItem('grid_api_key');
+  const w = localStorage.getItem('grid_workspace');
+  if (k) document.getElementById('authKey').value = k;
+  if (w) document.getElementById('authWs').value = w;
+});
+let loadingCount = 0;
+
+function startLoad() { loadingCount++; updateSubtitle(); }
+function endLoad() { loadingCount--; updateSubtitle(); }
+
+function updateSubtitle() {
+  const el = document.getElementById('subtitle');
+  if (loadingCount > 0) el.textContent = 'Updating...';
+  else el.textContent = 'Live — auto-refreshes every 30s';
+}
+
+async function fetchApi(path) {
+  const headers = {};
+  // Read API key from localStorage or prompt
+  const apiKey = localStorage.getItem('grid_api_key') || '';
+  const workspace = localStorage.getItem('grid_workspace') || '';
+  if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+  if (workspace) headers['X-Grid-Workspace'] = workspace;
+  const r = await fetch(API + path, { headers });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function renderMarket() {
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="label">Clients</div><div class="value" id="statClients">-</div></div>
+    <div class="stat-card"><div class="label">Opportunities</div><div class="value" id="statOpps">-</div></div>
+    <div class="stat-card"><div class="label">Pipeline Value</div><div class="value" id="statValue">-</div></div>
+    <div class="stat-card"><div class="label">Lessons</div><div class="value" id="statLessons">-</div></div>
+    <div class="stat-card"><div class="label">Patterns</div><div class="value" id="statPatterns">-</div></div>
+    <div class="stat-card"><div class="label">Accelerators</div><div class="value" id="statAccelerators">-</div></div>
+  `;
+}
+
+function renderOpportunities(data) {
+  const card = document.getElementById('opportunitiesCard');
+  if (!data || !data.entries || data.entries.length === 0) {
+    card.innerHTML = '<h3>Opportunity Pipeline</h3><div class="loading">No opportunities yet.</div>';
+    return;
+  }
+  const entries = data.entries.slice(0, 10);
+  let html = '<h3>Opportunity Pipeline</h3>';
+  entries.forEach(e => {
+    const tags = e.tags || [];
+    const stage = tags.find(t => t.startsWith('stage:'))?.split(':')[1] || 'detected';
+    const content = e.content || '';
+    const title = content.split('\\n')[0]?.replace('Title: ', '') || 'Opportunity';
+    const valueMatch = content.match(/Annual Value:\s*\\$?([\\d,.]+)/);
+    const value = valueMatch ? '$' + valueMatch[1] : '';
+    html += `<div class="opportunity-item"><span class="opp-stage">[${stage}]</span> ${title} <span class="opp-value">${value}</span></div>`;
+  });
+  card.innerHTML = html;
+}
+
+function renderRadar(data) {
+  const card = document.getElementById('radarCard');
+  if (!data || !data.opportunities || data.opportunities.length === 0) {
+    card.innerHTML = '<h3>Opportunity Radar</h3><div class="loading">Run grid radar to see results.</div>';
+    return;
+  }
+  const opps = data.opportunities.slice(0, 5);
+  let html = `<h3>Opportunity Radar — $${(data.total_annual_value || 0).toLocaleString()}/yr</h3>`;
+  opps.forEach(o => {
+    const conf = Math.round((o.confidence || 0) * 100);
+    html += `<div class="opportunity-item">${o.title}<br><span class="opp-value">$${(o.annual_value || 0).toLocaleString()}/yr</span> <span class="opp-stage">${conf}% confidence</span></div>`;
+  });
+  card.innerHTML = html;
+}
+
+function renderLessons(data) {
+  const card = document.getElementById('lessonsCard');
+  if (!data || !data.lessons || data.lessons.length === 0) {
+    card.innerHTML = '<h3>Recent Lessons</h3><div class="loading">No lessons yet.</div>';
+    return;
+  }
+  let html = '<h3>Recent Lessons</h3>';
+  data.lessons.slice(0, 5).forEach(l => {
+    const icon = {worked: '\u2705', failed: '\u274c', surprised: '\U0001f92f', reusable: '\u267b\ufe0f'}[l.category] || '\U0001f4ac';
+    html += `<div class="lesson-item">${icon} ${l.content?.substring(0, 80) || ''}</div>`;
+  });
+  card.innerHTML = html;
+}
+
+function renderPatterns(data) {
+  const card = document.getElementById('patternsCard');
+  if (!data) {
+    card.innerHTML = '<h3>Patterns &amp; Accelerators</h3><div class="loading">Run grid pattern scan.</div>';
+    return;
+  }
+  let html = '<h3>Patterns &amp; Accelerators</h3>';
+  html += `<div class="opportunity-item">Patterns: ${data.patterns_count || 0}</div>`;
+  html += `<div class="opportunity-item">Playbooks: ${data.playbooks_count || 0}</div>`;
+  html += `<div class="opportunity-item">Accelerators: ${data.accelerators_count || 0}</div>`;
+  if (data.domains_covered?.length) html += `<div class="opportunity-item">Domains: ${data.domains_covered.join(', ')}</div>`;
+  card.innerHTML = html;
+}
+
+function renderReadiness(data) {
+  const card = document.getElementById('readinessCard');
+  if (!data) {
+    card.innerHTML = '<h3>Readiness Scores</h3><div class="loading">Run grid intel readiness.</div>';
+    return;
+  }
+  let html = `<h3>Readiness — ${data.overall_readiness || '?'}/100</h3>`;
+  const dims = data.dimensions || {};
+  Object.entries(dims).forEach(([name, dim]) => {
+    const score = dim.score || 0;
+    const color = score >= 70 ? 'green' : (score >= 40 ? 'yellow' : 'accent');
+    html += `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:0.8rem"><span>${name}</span><span>${score}</span></div><div class="bar-container"><div class="bar-fill ${color}" style="width:${score}%"></div></div></div>`;
+  });
+  card.innerHTML = html;
+}
+
+async function refresh() {
+  startLoad();
+  renderMarket();
+  try {
+    const [info, ops, radar, lessons, patterns, readiness] = await Promise.all([
+      fetchApi('/info').catch(() => null),
+      fetchApi('/query?tags=opportunity&max=50').catch(() => null),
+      fetchApi('/query?tags=opportunity-radar&max=10').catch(() => null),
+      fetchApi('/query?tags=lesson&max=20').catch(() => null),
+      fetchApi('/query?tags=level:playbook,level:accelerator&max=50').catch(() => null),
+      fetchApi('/query?tags=readiness&max=5').catch(() => null),
+    ]);
+
+    if (info) {
+      document.getElementById('statClients').textContent = info.unique_agents || '-';
+    }
+
+    if (ops) {
+      document.getElementById('statOpps').textContent = ops.query_meta?.total_before_filter || ops.entries?.length || '-';
+      const totalValue = ops.entries?.reduce((s, e) => {
+        const m = (e.content || '').match(/Annual Value:\s*\\$?([\\d,.]+)/);
+        return s + (m ? parseFloat(m[1].replace(',','')) : 0);
+      }, 0) || 0;
+      document.getElementById('statValue').textContent = '$' + totalValue.toLocaleString();
+      renderOpportunities(ops);
+    }
+
+    if (radar) renderRadar(radar);
+    if (lessons) {
+      document.getElementById('statLessons').textContent = lessons.entries?.length || '-';
+      renderLessons(lessons);
+    }
+    if (patterns) {
+      document.getElementById('statPatterns').textContent = patterns.entries?.filter(e => (e.tags||[]).includes('level:pattern') || (e.tags||[]).includes('level:playbook')).length || '-';
+      document.getElementById('statAccelerators').textContent = patterns.entries?.filter(e => (e.tags||[]).includes('level:accelerator')).length || '-';
+      renderPatterns({ patterns_count: patterns.entries?.filter(e => (e.tags||[]).includes('level:pattern')||(e.tags||[]).includes('level:playbook')||(e.tags||[]).includes('level:accelerator')).length });
+    }
+    if (readiness) renderReadiness(readiness);
+  } catch(e) {
+    document.getElementById('statsGrid').innerHTML += `<div class="error-msg">Error: ${e.message}. Open via grid server.</div>`;
+  }
+  endLoad();
+}
+
+updateSubtitle();
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

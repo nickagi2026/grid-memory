@@ -1,0 +1,10 @@
+node_modules/
+data/
+__pycache__/
+*.pyc
+sdk/python/grid_memory/__pycache__/
+sdk/python/tests/__pycache__/
+*.zip
+*.tar.gz
+*.bak
+grid-memory-v*.zip

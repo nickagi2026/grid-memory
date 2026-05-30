@@ -1,0 +1,146 @@
+# Grid Memory — Python SDK
+
+Shared persistent memory for multi-agent teams. Works with **AutoGen**, **CrewAI**, and **LangGraph**.
+
+```
+pip install grid-memory
+```
+
+## Quick Start
+
+```python
+from grid_memory import Grid
+
+grid = Grid("http://localhost:8080", default_agent_id="my-agent")
+
+# Write facts, decisions, and handoffs
+grid.fact("PostgreSQL pool max: 25 connections", tags=["database"])
+grid.decide("Use Express over Fastify", tags=["architecture"],
+            rationale="Better middleware ecosystem maturity")
+grid.handoff(from_agent="researcher", to_agent="builder",
+             content="API spec ready in docs/api-v2.md", status="ready")
+
+# Query by tags, agent, type
+entries = grid.query(tags=["database"])
+for e in entries["entries"]:
+    print(f"[{e['type']}] {e['agent_id']}: {e['content'][:100]}")
+
+# Inject context into agent prompts
+context = grid.inject("building the API layer")
+print(context)
+# ─── SHARED MEMORY GRID ───
+# [fact] 18:05 — agent:architect — database
+# PostgreSQL pool max: 25 connections
+# ─── END GRID ───
+
+# Admin
+info = grid.info()
+grid.prune()
+grid.forget("grid_20260529_abc123")
+```
+
+## Per-Agent Identity
+
+All convenience methods accept an `agent_id` parameter:
+
+```python
+grid.fact("Important note", agent_id="researcher-1")   # override per-call
+grid.decide("Architecture decision", agent_id="lead-architect")
+```
+
+Or set a default for the client:
+
+```python
+grid = Grid(default_agent_id="worker-bee")
+grid.fact("My fact")  # uses "worker-bee"
+```
+
+## Framework Plugins
+
+### AutoGen
+
+```python
+from grid_memory import AutoGenGridPlugin
+import autogen
+
+# Create the plugin
+grid_plugin = AutoGenGridPlugin(agent_id="researcher")
+
+# Create your agent normally
+agent = autogen.AssistantAgent(
+    name="researcher",
+    llm_config=llm_config,
+)
+
+# Wrap it — auto-injects Grid context before messages, logs exchanges
+agent = grid_plugin.wrap(agent)
+```
+
+### CrewAI
+
+```python
+from grid_memory import CrewAITool
+from crewai import Agent
+
+grid_tool = CrewAITool(agent_id="researcher")
+
+agent = Agent(
+    name="Researcher",
+    tools=[
+        grid_tool.query_tool(),    # query the Grid
+        grid_tool.write_tool(),    # write to the Grid
+        grid_tool.context_tool(),  # inject context
+    ],
+)
+```
+
+### LangGraph
+
+```python
+from grid_memory import langgraph_grid_node
+from langgraph.graph import StateGraph
+
+# Create a Grid injection node
+inject_context = langgrid_grid_node(agent_id="my-agent")
+
+graph = StateGraph(AgentState)
+graph.add_node("grid_inject", inject_context)
+graph.add_edge("grid_inject", "next_node")
+```
+
+## Development
+
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests (requires Grid server at localhost:8080)
+pytest tests/
+```
+
+## Framework Comparison
+
+| Feature | Grid Memory | LangMem | Mem0 | Zep |
+|---------|-------------|---------|------|-----|
+| Multi-agent shared store | ✅ Built for this | ❌ Per-agent only | ❌ Per-user only | ❌ Per-user only |
+| Tagged + TTL'd entries | ✅ Built-in | ❌ | ⚠️ Manual | ✅ Time-based |
+| Relevance scoring | ✅ Tag > type > recency | ❌ | ⚠️ | ✅ |
+| Context injection block | ✅ Markdown, LLM-ready | ❌ | ❌ | ❌ |
+| Append-only audit | ✅ Immutable entries | ❌ | ❌ | ❌ |
+| Zero dependencies | ✅ Pure stdlib | ❌ | ❌ | ❌ |
+| Single Docker container | ✅ 130MB | ❌ | ❌ | Requires DB |
+| API | REST + Python + Node SDK | Python SDK | Python SDK | REST + SDK |
+
+## Running the Grid Server
+
+```bash
+# Docker (recommended)
+docker compose up -d
+
+# Or directly with Node (requires Node >= 18)
+cd ../../
+node server.js
+
+# Verify
+curl http://localhost:8080/health
+```

@@ -1,0 +1,11 @@
+node_modules
+.git
+data
+tests
+examples
+sdk
+scripts
+tools
+telemetry
+{schemas,examples,references,tests,tools,telemetry,scripts,data}
+{sketch,todo,.gitignore,*.md}

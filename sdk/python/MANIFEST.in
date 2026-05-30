@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+recursive-include grid_memory *.py
+prune grid_memory/enterprise
+prune grid_memory/hooks
+prune grid_memory/product
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc

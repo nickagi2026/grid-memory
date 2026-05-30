@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Shared Memory Grid Output",
+  "description": "Schema for all outputs from the shared-memory-grid skill",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "created_by",
+    "operation"
+  ],
+  "properties": {
+    "artifact_type": {
+      "type": "string",
+      "enum": ["shared_memory_grid_output"]
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "created_by": {
+      "type": "string",
+      "enum": ["shared-memory-grid"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "operation": {
+      "type": "string",
+      "enum": ["read", "write", "prune", "inject", "info", "forget"]
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "pattern": "^grid_" },
+              "agent_id": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "decision", "fact", "task_status", "artifact_ref",
+                  "handoff", "question", "observation", "blocker", "state_update"
+                ]
+              },
+              "tags": { "type": "array", "items": { "type": "string" } },
+              "content": { "type": "string" },
+              "created_at": { "type": "string", "format": "date-time" },
+              "expires_at": { "type": "string", "format": "date-time" },
+              "parent_entry": { "type": ["string", "null"] },
+              "entry_id": { "type": "string" },
+              "ttl_seconds": { "type": "integer" },
+              "store_entries_count": { "type": "integer" }
+            }
+          }
+        },
+        "query_meta": {
+          "type": "object",
+          "properties": {
+            "total_before_filter": { "type": "integer" },
+            "returned": { "type": "integer" },
+            "expired_filtered": { "type": "integer" },
+            "query": { "type": "object" }
+          }
+        },
+        "block": { "type": "string" },
+        "entry_count": { "type": "integer" },
+        "bytes": { "type": "integer" }
+      }
+    },
+    "next_skill": {
+      "type": "string"
+    }
+  }
+}

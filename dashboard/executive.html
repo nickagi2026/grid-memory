@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Memory — Executive Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; padding: 20px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 800; color: #63b3ed; margin-bottom: 4px; }
+  .subtitle { color: #8892a4; font-size: 13px; letter-spacing: 1px; margin-bottom: 30px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
+  .kpi-card { background: #1a1c25; border: 1px solid #2d2f3a; border-radius: 10px; padding: 20px; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: #f7fafc; }
+  .kpi-label { font-size: 12px; color: #8892a4; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .kpi-card.good .kpi-value { color: #68d391; }
+  .kpi-card.warn .kpi-value { color: #f6ad55; }
+  .kpi-card.bad .kpi-value { color: #fc8181; }
+  .section { margin-bottom: 30px; }
+  .section h2 { font-size: 16px; font-weight: 600; color: #f7fafc; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2d2f3a; }
+  .card { background: #1a1c25; border: 1px solid #2d2f3a; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+  .card h3 { font-size: 14px; font-weight: 600; color: #f7fafc; }
+  .card p { font-size: 13px; color: #8892a4; margin-top: 4px; }
+  .card .meta { font-size: 11px; color: #556; margin-top: 8px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 6px; }
+  .badge.high { background: rgba(252,129,129,0.15); color: #fc8181; }
+  .badge.medium { background: rgba(246,173,85,0.15); color: #f6ad55; }
+  .badge.low { background: rgba(99,179,237,0.15); color: #63b3ed; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .loading { text-align: center; padding: 60px; color: #8892a4; }
+  .error { text-align: center; padding: 60px; color: #fc8181; }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+    <div>
+      <h1>Grid Memory</h1>
+      <div class="subtitle">Executive Intelligence Layer</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input id="api-key-input" type="password" placeholder="API Key" style="background:#1a1c25;border:1px solid #2d2f3a;border-radius:6px;padding:6px 12px;color:#e2e8f0;font-size:12px;width:200px;" value="">
+      <button onclick="setKey()" style="background:#63b3ed;border:none;border-radius:6px;padding:6px 12px;color:#0f1117;font-size:12px;font-weight:600;cursor:pointer;">Set Key</button>
+      <span id="api-key-indicator" style="font-size:11px;color:#8892a4;">No key</span>
+    </div>
+  </div>
+  <div id="loading" class="loading">Loading executive dashboard...</div>
+  <div id="content" style="display:none;"></div>
+</div>
+<script>
+const API = window.location.origin;
+let apiKey = localStorage.getItem('grid_api_key') || '';
+
+function setKey() {
+  apiKey = document.getElementById('api-key-input').value.trim();
+  localStorage.setItem('grid_api_key', apiKey);
+  document.getElementById('api-key-indicator').textContent = apiKey ? 'Key set' : 'No key';
+  load();
+}
+
+async function load() {
+  try {
+    const headers = {};
+    if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+    const res = await fetch(API + '/executive/dashboard', { headers });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    render(data);
+  } catch (e) {
+    document.getElementById('loading').innerHTML = '<div class="error">Could not load dashboard: ' + e.message + '<br><br><small>Make sure the Grid server is running on ' + API + '</small></div>';
+  }
+}
+
+function render(d) {
+  const s = d.summary || {};
+  const r = d.revenue || {};
+  const o = d.opportunities || {};
+  const am = d.amnesia || {};
+  const ds = d.decision_stats || {};
+
+  let html = '';
+
+  // KPIs
+  html += '<div class="kpi-grid">';
+  html += kpi(s.total_entries || 0, 'Total Entries', 'good');
+  html += kpi(s.unique_agents || 0, 'Active Agents', 'good');
+  html += kpi('$' + ((r.total_revenue || 0)).toLocaleString(), 'Total Revenue', 'good');
+  html += kpi('$' + ((o.pipeline_value || 0)).toLocaleString(), 'Pipeline Value', r.pipeline_value > 0 ? 'good' : '');
+  html += kpi((r.win_rate || '0%'), 'Win Rate', (parseInt(r.win_rate) || 0) > 50 ? 'good' : 'warn');
+  html += kpi((am.amnesia_score || 0) + '/1.0', 'Amnesia Score', (am.amnesia_score || 0) < 0.3 ? 'good' : (am.amnesia_score || 0) < 0.6 ? 'warn' : 'bad');
+  html += '</div>';
+
+  // Two columns: Opportunities + Risks
+  html += '<div class="two-col">';
+
+  // Opportunities
+  html += '<div class="section"><h2>Opportunities</h2>';
+  if (o.by_stage) {
+    for (const [stage, count] of Object.entries(o.by_stage)) {
+      html += '<div class="card"><h3>' + stage + '</h3><p>' + count + ' opportunities</p></div>';
+    }
+  } else {
+    html += '<div class="card"><p>No opportunities tracked yet</p></div>';
+  }
+  html += '</div>';
+
+  // Risks
+  html += '<div class="section"><h2>Risks &amp; Alerts</h2>';
+  if (d.risks && d.risks.length > 0) {
+    for (const risk of d.risks.slice(0, 5)) {
+      const sev = risk.severity || 'medium';
+      html += '<div class="card"><h3><span class="badge ' + sev + '">' + sev + '</span>' + (risk.type || 'Risk') + '</h3><p>' + (risk.details || '') + '</p></div>';
+    }
+  }
+  if (am.gaps_count > 0) html += '<div class="card"><h3>Knowledge Gaps</h3><p>' + am.gaps_count + ' topics last discussed 30+ days ago</p></div>';
+  if (am.orphans_count > 0) html += '<div class="card"><h3>Orphaned Decisions</h3><p>' + am.orphans_count + ' decisions never acted upon</p></div>';
+  if (am.spof_count > 0) html += '<div class="card"><h3>Single Points of Failure</h3><p>' + am.spof_count + ' knowledge areas held by one agent</p></div>';
+  if ((d.risks || []).length === 0 && am.gaps_count === 0 && am.orphans_count === 0 && am.spof_count === 0) {
+    html += '<div class="card"><p>No risks detected</p></div>';
+  }
+  html += '</div>';
+
+  html += '</div>'; // end two-col
+
+  // Recent Decisions
+  html += '<div class="section"><h2>Recent Decisions</h2>';
+  if (d.recent_decisions && d.recent_decisions.length > 0) {
+    for (const dec of d.recent_decisions.slice(0, 5)) {
+      html += '<div class="card"><h3>' + (dec.content || dec.decision || '').slice(0, 80) + '</h3><p>By: ' + (dec.agent || dec.agent_id || 'unknown') + '</p><div class="meta">' + (dec.created_at || '').slice(0, 10) + '</div></div>';
+    }
+  } else {
+    html += '<div class="card"><p>No decisions tracked yet</p></div>';
+  }
+  html += '</div>';
+
+  // Quick actions
+  html += '<div class="section"><h2>Explore</h2><div style="display:flex;gap:10px;flex-wrap:wrap;">';
+  html += action('Executive API', '/executive/dashboard', 'json');
+  html += action('Opportunities', '/roi', 'json');
+  html += action('QBR Report', '/qbr', 'json');
+  html += action('Amnesia Scan', '/amnesia/detect', 'json');
+  html += action('Main Dashboard', '/dashboard/', 'html');
+  html += action('Docs', '/docs/COMPREHENSIVE_GUIDE.md', 'md');
+  html += '</div></div>';
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function kpi(value, label, cls) {
+  return '<div class="kpi-card' + (cls ? ' ' + cls : '') + '"><div class="kpi-value">' + value + '</div><div class="kpi-label">' + label + '</div></div>';
+}
+
+function action(label, url, type) {
+  return '<a href="' + url + '" style="display:inline-block;padding:8px 16px;background:#1a1c25;border:1px solid #2d2f3a;border-radius:6px;color:#63b3ed;text-decoration:none;font-size:13px;font-weight:500;">' + label + '</a>';
+}
+
+load();
+</script>
+</body>
+</html>

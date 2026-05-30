@@ -1,0 +1,75 @@
+{
+  "name": "grid-memory",
+  "version": "1.2.0",
+  "description": "Persistent shared memory for multi-agent teams \u2014 append-only writes, relevance-weighted reads, TTL pruning, context injection",
+  "main": "sdk/node/src/index.js",
+  "scripts": {
+    "test": "node tests/test-store.js",
+    "write": "node reference/store.js write",
+    "read": "node reference/store.js read",
+    "inject": "node reference/store.js inject",
+    "prune": "node reference/store.js prune",
+    "info": "node reference/store.js info"
+  },
+  "keywords": [
+    "shared-memory",
+    "multi-agent",
+    "subagents",
+    "context",
+    "persistence",
+    "openclaw"
+  ],
+  "optionalDependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "license": "BUSL-1.1",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "server.js",
+    "gateway.js",
+    "route-registry.js",
+    "governance-db.js",
+    "contracts.js",
+    "constitution.js",
+    "federation.js",
+    "subscriptions.js",
+    "seed-mode.js",
+    "auto-contract.js",
+    "setup-wizard.js",
+    "instant-roi.js",
+    "decision-graph.js",
+    "amnesia-detector.js",
+    "explain.js",
+    "cascade.js",
+    "conflicts.js",
+    "deduplication.js",
+    "dreaming.js",
+    "openai-proxy.js",
+    "provenance.js",
+    "reputation.js",
+    "staleness.js",
+    "reference/",
+    "LICENSE",
+    "dashboard/index.html",
+    "dashboard/admin.html",
+    "dashboard/ops.html",
+    "sdk/node/",
+    "docs/INSTALL.md",
+    "docs/FIRST_5_MINUTES.md",
+    "docs/REAL_DATA_ONBOARDING.md",
+    "docs/COMPREHENSIVE_GUIDE.md",
+    "docs/SECURITY.md",
+    "docs/BACKUP.md",
+    "docs/BENCHMARKS.md",
+    "docs/HOW_AUTHORIZATION_WORKS.md",
+    "docs/HOW_MULTI_TENANCY_WORKS.md",
+    "docs/WORKSPACE_ISOLATION.md",
+    "README.md"
+  ],
+  "dependencies": {
+    "marked": "^18.0.4"
+  },
+  "author": "Nick Stoianov <nick@criticalpathfoundry.com>"
+}

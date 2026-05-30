@@ -1,0 +1,91 @@
+{
+  "constitutions": {
+    "workspace-a": {
+      "rules": [
+        {
+          "name": "All decisions need rationale",
+          "description": "",
+          "patterns": [],
+          "entryTypes": [
+            "decision"
+          ],
+          "requiredWords": [
+            "because",
+            "rationale"
+          ],
+          "blockedPatterns": []
+        },
+        {
+          "name": "No API keys",
+          "description": "",
+          "patterns": [],
+          "entryTypes": [],
+          "requiredWords": [],
+          "blockedPatterns": [
+            "sk-[A-Za-z0-9]{32,}"
+          ]
+        }
+      ],
+      "enforceMode": "block",
+      "created_at": "2026-05-29T17:46:46.913Z",
+      "updated_at": "2026-05-29T17:46:46.913Z"
+    },
+    "workspace-b": {
+      "rules": [
+        {
+          "name": "Decisions need rationale",
+          "description": "",
+          "patterns": [],
+          "entryTypes": [
+            "decision"
+          ],
+          "requiredWords": [
+            "because",
+            "rationale"
+          ],
+          "blockedPatterns": []
+        }
+      ],
+      "enforceMode": "block",
+      "created_at": "2026-05-29T17:46:46.932Z",
+      "updated_at": "2026-05-29T17:46:46.932Z"
+    },
+    "workspace-c": {
+      "rules": [
+        {
+          "name": "No secrets",
+          "description": "",
+          "patterns": [],
+          "entryTypes": [],
+          "requiredWords": [],
+          "blockedPatterns": [
+            "ghp_[A-Za-z0-9]{36}"
+          ]
+        }
+      ],
+      "enforceMode": "block",
+      "created_at": "2026-05-29T17:46:46.945Z",
+      "updated_at": "2026-05-29T17:46:46.945Z"
+    },
+    "ws-test": {
+      "rules": [
+        {
+          "name": "All decisions must include rationale",
+          "description": "All decisions must include rationale",
+          "patterns": [],
+          "entryTypes": [
+            "decision"
+          ],
+          "requiredWords": [
+            "rationale",
+            "because"
+          ],
+          "blockedPatterns": []
+        }
+      ],
+      "enforceMode": "block",
+      "created_at": "2026-05-29T17:58:21.154Z",
+      "updated_at": "2026-05-29T17:58:21.155Z"
+    }
+  }
+}

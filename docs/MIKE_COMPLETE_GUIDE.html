@@ -1,0 +1,3401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Memory — Complete Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --bg-card: #1a1c25;
+    --bg-code: #15171e;
+    --border: #2d2f3a;
+    --text: #e2e8f0;
+    --text-dim: #8892a4;
+    --accent: #63b3ed;
+    --accent2: #68d391;
+    --accent3: #f6ad55;
+    --accent4: #fc8181;
+    --link: #63b3ed;
+    --heading: #f7fafc;
+    --code-bg: #1e2030;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 16px;
+  }
+
+  /* ─── Sidebar ─── */
+  #sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    overflow-y: auto; z-index: 100;
+    padding: 0 0 40px;
+  }
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  #sidebar .logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    font-size: 20px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    background: linear-gradient(180deg, rgba(99,179,237,0.08) 0%, transparent 100%);
+    position: sticky; top: 0; z-index: 2;
+  }
+  #sidebar .logo small {
+    display: block; font-size: 10px; font-weight: 500;
+    color: var(--text-dim); letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .sidebar-section {
+    padding: 12px 20px 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: #556;
+    margin-top: 8px;
+  }
+
+  .slink {
+    display: block;
+    padding: 3px 16px 3px 20px;
+    color: #a0aec0;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 400;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .slink:hover {
+    color: #63b3ed !important;
+    border-left-color: #63b3ed !important;
+    background: rgba(99,179,237,0.05);
+  }
+
+  /* ─── Main Content ─── */
+  #content {
+    margin-left: 280px;
+    padding: 40px 60px 100px;
+    max-width: 880px;
+  }
+
+  /* ─── Typography ─── */
+  h1, h2, h3, h4 { color: var(--heading); line-height: 1.3; }
+  h1 { font-size: 2.2em; font-weight: 800; margin: 0.6em 0 0.3em; letter-spacing: -0.02em; }
+  h2 { font-size: 1.5em; font-weight: 700; margin: 2em 0 0.6em; padding-bottom: 0.3em; border-bottom: 2px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 1.15em; font-weight: 600; margin: 1.5em 0 0.5em; }
+  h4 { font-size: 1em; font-weight: 600; margin: 1.2em 0 0.4em; color: var(--accent); }
+  p { margin: 0.8em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: var(--heading); }
+  em { color: var(--accent2); }
+  ul, ol { margin: 0.6em 0 0.6em 1.5em; }
+  li { margin: 0.3em 0; }
+  hr { margin: 2em 0; border: none; border-top: 1px solid var(--border); }
+
+  blockquote {
+    border-left: 3px solid var(--accent); padding: 12px 20px; margin: 1em 0;
+    background: rgba(99,179,237,0.06); border-radius: 0 8px 8px 0;
+    color: var(--text-dim); font-style: italic;
+  }
+  blockquote strong { color: var(--accent); }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'monospace'; font-size: 0.88em;
+    background: var(--code-bg); padding: 2px 7px; border-radius: 4px; color: #e6d8b5;
+  }
+  pre {
+    background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; margin: 1em 0; overflow-x: auto; line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; font-size: 0.85em; color: #e2e8f0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.94em; }
+  th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+  th { background: var(--bg-card); color: var(--heading); font-weight: 600; font-size: 0.92em; letter-spacing: 0.3px; }
+  td { background: rgba(26,28,37,0.5); }
+  tr:hover td { background: rgba(99,179,237,0.03); }
+
+  /* ─── Overview Section ─── */
+  .overview-section { margin-bottom: 2em; }
+  .overview-section h2 { font-size: 1.8em; border: none; text-align: center; margin-bottom: 0.5em; }
+  .overview-section > p { text-align: center; color: var(--text-dim); max-width: 600px; margin: 0 auto 2em; }
+
+  .layer-cards { display: flex; gap: 20px; margin: 2em 0; }
+  .layer-card {
+    flex: 1; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .layer-card:hover {
+    border-color: var(--accent); transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99,179,237,0.1);
+  }
+  .layer-num {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; margin-bottom: 12px;
+  }
+  .layer-card:nth-child(1) .layer-num { background: rgba(99,179,237,0.15); color: var(--accent); }
+  .layer-card:nth-child(2) .layer-num { background: rgba(104,211,145,0.15); color: var(--accent2); }
+  .layer-card:nth-child(3) .layer-num { background: rgba(246,173,85,0.15); color: var(--accent3); }
+  .layer-name { font-size: 16px; font-weight: 700; color: var(--heading); margin-bottom: 8px; }
+  .layer-desc { font-size: 13px; color: var(--text-dim); line-height: 1.5; margin-bottom: 12px; }
+  .layer-cta { font-size: 12px; font-weight: 600; color: var(--accent); }
+
+  /* ─── Section Dividers ─── */
+  .section-divider {
+    margin: 5em 0 3em;
+    padding: 2.5em 0;
+    border-top: 3px solid var(--accent);
+    border-bottom: 3px solid var(--accent);
+    text-align: center;
+    background: linear-gradient(90deg, transparent, rgba(99,179,237,0.05), transparent);
+  }
+  .section-divider h2 {
+    border: none; margin: 0 0 8px; color: var(--accent); font-size: 1.8em;
+  }
+  .section-divider p {
+    color: var(--text-dim); font-size: 14px; margin: 0; letter-spacing: 1px;
+  }
+  .section-divider:nth-of-type(2) { border-color: var(--accent2); }
+  .section-divider:nth-of-type(2) h2 { color: var(--accent2); }
+  .section-divider:nth-of-type(3) { border-color: var(--accent3); }
+  .section-divider:nth-of-type(3) h2 { color: var(--accent3); }
+
+  .layer-inline-divider { height: 1px; margin: 3em 0; }
+
+  /* ─── Header ─── */
+  .gm-header {
+    text-align: center; padding: 40px 0 20px;
+    border-bottom: 1px solid var(--border); margin-bottom: 30px;
+  }
+  .gm-header .title { font-size: 36px; font-weight: 800; color: var(--accent); letter-spacing: 2px; padding: 20px 0 4px; }
+  .gm-header .subtitle { color: var(--text-dim); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; }
+
+  @media (max-width: 900px) {
+    .layer-cards { flex-direction: column; }
+  }
+
+  @media print {
+    #sidebar { display: none; }
+    #content { margin-left: 0; padding: 20px 30px; max-width: none; }
+    body { background: white; color: #111; font-size: 11pt; }
+    pre { background: #f5f5f5 !important; border-color: #ddd; }
+    code { background: #f5f5f5 !important; color: #333 !important; }
+    table { border-color: #ccc; }
+    th, td { border-color: #ccc; }
+    th { background: #f0f0f0; }
+    td { background: white; }
+    a { color: #1a56db; }
+    h1, h2, h3, h4 { color: #111; }
+    strong { color: #111; }
+    blockquote { border-left-color: #1a56db; background: #f8faff; }
+    blockquote strong { color: #1a56db; }
+    .section-divider { border-color: #1a56db; background: none; }
+    .section-divider h2 { color: #1a56db; }
+    .section-divider p { color: #666; }
+    .section-divider:nth-of-type(2) { border-color: #1a56db; }
+    .section-divider:nth-of-type(2) h2 { color: #1a56db; }
+    .section-divider:nth-of-type(3) { border-color: #1a56db; }
+    .section-divider:nth-of-type(3) h2 { color: #1a56db; }
+    .layer-card { break-inside: avoid; border-color: #ddd; }
+    .layer-num { background: #f0f0f0 !important; color: #333 !important; }
+    h2 { page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+    pre, table { page-break-inside: avoid; }
+  }
+
+  @media (max-width: 768px) {
+    #sidebar { display: none; }
+    #content { margin-left: 0; padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="logo">
+    Grid Memory
+    <small>Three Layers · One Product</small>
+  </div>
+  <div class="sidebar-section">Overview</div>
+<a href="#overview" class="slink">System Overview</a>
+<a href="#layer-1-memory-engine" class="slink">Layer 1: Memory Engine</a>
+<a href="#layer-2-governance" class="slink">Layer 2: Governance</a>
+<a href="#layer-3-intelligence" class="slink">Layer 3: Intelligence</a>
+<a href="#quick-start-reference" class="slink">Quick Start Reference</a>
+<div class="sidebar-section" style="margin-top:12px;">Layer 1 &amp; 2 — Developer Guide</div>
+<a href="#table-of-contents" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">Table of Contents</a>
+<a href="#1-why-this-exists" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">1. Why This Exists</a>
+<a href="#the-problem" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">The Problem</a>
+<a href="#what-the-grid-does" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What The Grid Does</a>
+<a href="#who-this-is-for" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Who This Is For</a>
+<a href="#2-core-concepts-explained-simply" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">2. Core Concepts — Explained Simply</a>
+<a href="#what-is-an-entry" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What Is an Entry?</a>
+<a href="#entry-types" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Entry Types</a>
+<a href="#tags" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Tags</a>
+<a href="#what-is-ttl" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What Is TTL?</a>
+<a href="#memory-tiers" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Memory Tiers</a>
+<a href="#what-is-a-workspace" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What Is a Workspace?</a>
+<a href="#what-is-federation" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What Is Federation?</a>
+<a href="#3-installation-step-by-step" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">3. Installation — Step by Step</a>
+<a href="#prerequisites" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Prerequisites</a>
+<a href="#option-a-quick-install-curl-coming-soon" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Option A: Quick Install (curl — coming soon)</a>
+<a href="#option-b-docker" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Option B: Docker</a>
+<a href="#option-c-from-source-nodejs" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Option C: From Source (Node.js)</a>
+<a href="#option-d-python-sdk" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Option D: Python SDK</a>
+<a href="#verifying-the-installation" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Verifying the Installation</a>
+<a href="#4-your-first-5-minutes" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">4. Your First 5 Minutes</a>
+<a href="#step-1-start-the-server" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Step 1: Start the Server</a>
+<a href="#step-2-open-the-dashboard" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Step 2: Open the Dashboard</a>
+<a href="#step-3-write-your-first-entry" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Step 3: Write Your First Entry</a>
+<a href="#step-4-read-it-back" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Step 4: Read It Back</a>
+<a href="#step-5-see-your-instant-roi" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Step 5: See Your Instant ROI</a>
+<a href="#5-everyday-operations" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">5. Everyday Operations</a>
+<a href="#writing-entries" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Writing Entries</a>
+<a href="#reading-entries" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Reading Entries</a>
+<a href="#injecting-context" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Injecting Context</a>
+<a href="#pruning-expired-data" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Pruning Expired Data</a>
+<a href="#forgetting-an-entry" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Forgetting an Entry</a>
+<a href="#checking-server-status" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Checking Server Status</a>
+<a href="#6-memory-contracts-schema-enforcement" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">6. Memory Contracts (Schema Enforcement)</a>
+<a href="#why-use-contracts" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Why Use Contracts?</a>
+<a href="#registering-a-contract" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Registering a Contract</a>
+<a href="#enforce-modes" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Enforce Modes</a>
+<a href="#what-happens-on-violation" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What Happens on Violation</a>
+<a href="#auto-discovering-contracts" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Auto-Discovering Contracts</a>
+<a href="#listing-all-contracts" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Listing All Contracts</a>
+<a href="#removing-a-contract" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Removing a Contract</a>
+<a href="#7-constitutions-policy-rules" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">7. Constitutions (Policy Rules)</a>
+<a href="#why-use-constitutions" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Why Use Constitutions?</a>
+<a href="#writing-natural-language-policies" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Writing Natural Language Policies</a>
+<a href="#registering-a-constitution-programmatically" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Registering a Constitution Programmatically</a>
+<a href="#enforce-modes" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Enforce Modes</a>
+<a href="#what-happens-on-violation-block-mode" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What Happens on Violation (block mode)</a>
+<a href="#listing-constitutions" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Listing Constitutions</a>
+<a href="#removing-a-constitution" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Removing a Constitution</a>
+<a href="#example-policy-templates" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Example Policy Templates</a>
+<a href="#8-federation-connecting-multiple-grids" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">8. Federation (Connecting Multiple Grids)</a>
+<a href="#quick-connect-one-click" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Quick Connect (One-Click)</a>
+<a href="#manual-peer-registration" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Manual Peer Registration</a>
+<a href="#trust-levels" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Trust Levels</a>
+<a href="#syncing-from-a-peer" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Syncing from a Peer</a>
+<a href="#listing-peers" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Listing Peers</a>
+<a href="#removing-a-peer" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Removing a Peer</a>
+<a href="#how-signatures-work" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How Signatures Work</a>
+<a href="#9-business-intelligence-dashboards" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">9. Business Intelligence Dashboards</a>
+<a href="#mike-dashboard" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">MIKE Dashboard</a>
+<a href="#executive-dashboard" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Executive Dashboard</a>
+<a href="#decision-graph" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Decision Graph</a>
+<a href="#qbr-reports" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">QBR Reports</a>
+<a href="#amnesia-detection" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Amnesia Detection</a>
+<a href="#instant-roi" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Instant ROI</a>
+<a href="#setup-wizard" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Setup Wizard</a>
+<a href="#10-security-enterprise-features" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">10. Security & Enterprise Features</a>
+<a href="#authentication" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Authentication</a>
+<a href="#development-mode-default" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Development Mode (Default)</a>
+<a href="#production-mode" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Production Mode</a>
+<a href="#creating-api-keys" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Creating API Keys</a>
+<a href="#permission-levels" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Permission Levels</a>
+<a href="#using-api-keys" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Using API Keys</a>
+<a href="#key-rotation" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Key Rotation</a>
+<a href="#listing-and-revoking-keys" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Listing and Revoking Keys</a>
+<a href="#pii-detection" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">PII Detection</a>
+<a href="#scanning-content-for-pii" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Scanning Content for PII</a>
+<a href="#audit-trail-tamper-evident" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Audit Trail (Tamper-Evident)</a>
+<a href="#viewing-the-audit-log" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Viewing the Audit Log</a>
+<a href="#verifying-audit-integrity" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">Verifying Audit Integrity</a>
+<a href="#rate-limiting" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Rate Limiting</a>
+<a href="#11-complete-api-reference" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">11. Complete API Reference</a>
+<a href="#core-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Core Endpoints</a>
+<a href="#post-write" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /write</a>
+<a href="#get-query" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /query</a>
+<a href="#post-query" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /query</a>
+<a href="#getpost-inject" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET|POST /inject</a>
+<a href="#post-prune" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /prune</a>
+<a href="#delete-forgetid" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">DELETE /forget/:id</a>
+<a href="#get-info" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /info</a>
+<a href="#get-health" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /health</a>
+<a href="#get-export" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /export</a>
+<a href="#post-import" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /import</a>
+<a href="#contract-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Contract Endpoints</a>
+<a href="#post-contracts" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /contracts</a>
+<a href="#get-contracts" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /contracts</a>
+<a href="#delete-contractsscope" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">DELETE /contracts/:scope</a>
+<a href="#get-auto-contracts" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /auto-contracts</a>
+<a href="#post-auto-contractsapprove" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /auto-contracts/approve</a>
+<a href="#post-auto-contractsreject" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /auto-contracts/reject</a>
+<a href="#get-auto-contractsstate" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /auto-contracts/state</a>
+<a href="#constitution-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Constitution Endpoints</a>
+<a href="#post-constitution" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /constitution</a>
+<a href="#get-constitution" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /constitution</a>
+<a href="#delete-constitution" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">DELETE /constitution</a>
+<a href="#post-constitutionfrom-text" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /constitution/from-text</a>
+<a href="#federation-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Federation Endpoints</a>
+<a href="#post-federationpeers" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /federation/peers</a>
+<a href="#get-federationpeers" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /federation/peers</a>
+<a href="#delete-federationpeersurl" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">DELETE /federation/peers/:url</a>
+<a href="#post-federationsyncurl" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /federation/sync/:url</a>
+<a href="#post-federationpeers-or-federationquick-connect" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /federation/peers (or /federation/quick-connect)</a>
+<a href="#gateway-management-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Gateway Management Endpoints</a>
+<a href="#post-gatewaykeycreate" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /gateway/key/create</a>
+<a href="#get-gatewaykeys" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /gateway/keys</a>
+<a href="#delete-gatewaykeyrevokeid" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">DELETE /gateway/key/revoke/:id</a>
+<a href="#post-gatewaykeyrotateid" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /gateway/key/rotate/:id</a>
+<a href="#get-gatewayaudit" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /gateway/audit</a>
+<a href="#get-gatewayauditverify" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /gateway/audit/verify</a>
+<a href="#post-gatewaypiiscan" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /gateway/pii/scan</a>
+<a href="#business-intelligence-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Business Intelligence Endpoints</a>
+<a href="#get-roi" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /roi</a>
+<a href="#get-mikedashboard" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /mike/dashboard</a>
+<a href="#get-executivedashboard" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /executive/dashboard</a>
+<a href="#get-decisionsgraph" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /decisions/graph</a>
+<a href="#get-decisionsstats" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /decisions/stats</a>
+<a href="#get-qbr" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /qbr</a>
+<a href="#post-qbrgenerate" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /qbr/generate</a>
+<a href="#get-amnesiadetect" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /amnesia/detect</a>
+<a href="#post-setup-wizard" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /setup-wizard</a>
+<a href="#post-seed" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /seed</a>
+<a href="#openai-compatible-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">OpenAI-Compatible Endpoints</a>
+<a href="#get-v1models" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /v1/models</a>
+<a href="#post-v1chatcompletions" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">POST /v1/chat/completions</a>
+<a href="#dashboard-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Dashboard Endpoints</a>
+<a href="#get-dashboard" class="slink" style="padding-left:52px;font-size:13px;font-weight:400;">GET /dashboard</a>
+<a href="#12-troubleshooting" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">12. Troubleshooting</a>
+<a href="#server-wont-start" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Server Won't Start</a>
+<a href="#seed-mode-not-working" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Seed Mode Not Working</a>
+<a href="#federation-sync-fails" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Federation Sync Fails</a>
+<a href="#auth-errors-in-production" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Auth Errors in Production</a>
+<a href="#constitution-rules-not-blocking" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Constitution Rules Not Blocking</a>
+<a href="#contracts-not-validating" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Contracts Not Validating</a>
+<a href="#rate-limiting" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Rate Limiting</a>
+<a href="#audit-hash-chain-broken" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Audit Hash Chain Broken</a>
+<a href="#13-architecture-overview" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">13. Architecture Overview</a>
+<a href="#request-flow" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Request Flow</a>
+<a href="#data-flow-write" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Data Flow: Write</a>
+<a href="#data-flow-read" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Data Flow: Read</a>
+<a href="#quick-reference-card" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">Quick Reference Card</a>
+<a href="#14-route-authorization" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">14. Route Authorization</a>
+<a href="#mike-intelligence-endpoints-require-analyst" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">MIKE Intelligence Endpoints (require analyst+)</a>
+<a href="#management-endpoints" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Management Endpoints</a>
+<a href="#permission-levels" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Permission Levels</a>
+<a href="#using-auth-headers" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Using Auth Headers</a>
+<a href="#route-registry-architecture" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Route Registry Architecture</a>
+<div class="sidebar-section" style="margin-top:12px;">Layer 3 — Intelligence Guide</div>
+<a href="#table-of-contents" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">Table of Contents</a>
+<a href="#1-what-is-mike" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">1. What Is MIKE?</a>
+<a href="#what-is-mike" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What is MIKE?</a>
+<a href="#what-problem-does-mike-solve" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What problem does MIKE solve?</a>
+<a href="#why-was-mike-created" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Why was MIKE created?</a>
+<a href="#who-is-mike-for" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Who is MIKE for?</a>
+<a href="#how-is-mike-different-from-chatgpt" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is MIKE different from ChatGPT?</a>
+<a href="#how-is-mike-different-from-copilot" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is MIKE different from Copilot?</a>
+<a href="#how-is-mike-different-from-bi-tools" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is MIKE different from BI tools?</a>
+<a href="#how-is-mike-different-from-consulting-firms" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is MIKE different from consulting firms?</a>
+<a href="#how-is-mike-different-from-agent-platforms" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is MIKE different from agent platforms?</a>
+<a href="#2-what-business-problems-does-mike-solve" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">2. What Business Problems Does MIKE Solve?</a>
+<a href="#how-does-mike-help-increase-revenue" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE help increase revenue?</a>
+<a href="#how-does-mike-help-reduce-costs" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE help reduce costs?</a>
+<a href="#how-does-mike-reduce-operational-risk" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE reduce operational risk?</a>
+<a href="#how-does-mike-preserve-institutional-knowledge" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE preserve institutional knowledge?</a>
+<a href="#how-does-mike-help-during-leadership-turnover" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE help during leadership turnover?</a>
+<a href="#how-does-mike-help-during-acquisitions" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE help during acquisitions?</a>
+<a href="#how-does-mike-help-during-ai-transformations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE help during AI transformations?</a>
+<a href="#how-does-mike-help-scale-consulting-engagements" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE help scale consulting engagements?</a>
+<a href="#how-does-mike-identify-hidden-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify hidden opportunities?</a>
+<a href="#3-what-does-mike-actually-do" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">3. What Does MIKE Actually Do?</a>
+<a href="#what-are-mikes-capabilities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What are MIKE's capabilities?</a>
+<a href="#what-are-mikes-limitations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What are MIKE's limitations?</a>
+<a href="#what-can-mike-automate" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What can MIKE automate?</a>
+<a href="#what-decisions-can-mike-support" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What decisions can MIKE support?</a>
+<a href="#what-decisions-should-humans-still-make" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What decisions should humans still make?</a>
+<a href="#how-does-mike-generate-recommendations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE generate recommendations?</a>
+<a href="#how-does-mike-generate-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE generate opportunities?</a>
+<a href="#how-does-mike-generate-risk-alerts" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE generate risk alerts?</a>
+<a href="#4-how-does-mike-work" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">4. How Does MIKE Work?</a>
+<a href="#how-does-mike-collect-information" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE collect information?</a>
+<a href="#where-does-mike-get-its-data" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Where does MIKE get its data?</a>
+<a href="#how-does-mike-learn" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE learn?</a>
+<a href="#how-does-mike-remember" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE remember?</a>
+<a href="#how-does-mike-identify-patterns" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify patterns?</a>
+<a href="#how-does-mike-identify-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify opportunities?</a>
+<a href="#how-does-mike-identify-risks" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify risks?</a>
+<a href="#how-does-mike-generate-executive-insights" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE generate executive insights?</a>
+<a href="#how-does-mike-avoid-hallucinations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE avoid hallucinations?</a>
+<a href="#how-does-mike-validate-recommendations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE validate recommendations?</a>
+<a href="#5-opportunity-engine" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">5. Opportunity Engine</a>
+<a href="#what-is-an-opportunity" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What is an opportunity?</a>
+<a href="#how-does-mike-identify-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify opportunities?</a>
+<a href="#how-does-mike-score-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE score opportunities?</a>
+<a href="#what-evidence-supports-an-opportunity" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What evidence supports an opportunity?</a>
+<a href="#how-does-mike-estimate-value" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE estimate value?</a>
+<a href="#how-does-mike-estimate-effort" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE estimate effort?</a>
+<a href="#how-does-mike-estimate-roi" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE estimate ROI?</a>
+<a href="#how-does-mike-estimate-confidence" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE estimate confidence?</a>
+<a href="#how-do-i-approve-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How do I approve opportunities?</a>
+<a href="#how-do-i-reject-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How do I reject opportunities?</a>
+<a href="#how-do-i-convert-an-opportunity-into-a-project" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How do I convert an opportunity into a project?</a>
+<a href="#6-client-intelligence" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">6. Client Intelligence</a>
+<a href="#how-does-mike-model-clients" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE model clients?</a>
+<a href="#what-information-is-stored-about-clients" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What information is stored about clients?</a>
+<a href="#how-does-mike-identify-expansion-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify expansion opportunities?</a>
+<a href="#how-does-mike-identify-at-risk-clients" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify at-risk clients?</a>
+<a href="#how-does-mike-identify-upsell-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify upsell opportunities?</a>
+<a href="#how-does-mike-recommend-next-engagements" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE recommend next engagements?</a>
+<a href="#how-does-mike-estimate-client-lifetime-value" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE estimate client lifetime value?</a>
+<a href="#how-does-mike-track-client-outcomes" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE track client outcomes?</a>
+<a href="#7-assessment-intelligence" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">7. Assessment Intelligence</a>
+<a href="#what-is-an-assessment" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What is an assessment?</a>
+<a href="#how-does-mike-conduct-assessments" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE conduct assessments?</a>
+<a href="#how-does-mike-score-assessments" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE score assessments?</a>
+<a href="#how-does-mike-identify-pain-points" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify pain points?</a>
+<a href="#how-does-mike-identify-inefficiencies" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify inefficiencies?</a>
+<a href="#how-does-mike-identify-automation-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify automation opportunities?</a>
+<a href="#how-does-mike-identify-ai-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify AI opportunities?</a>
+<a href="#how-does-mike-produce-recommendations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE produce recommendations?</a>
+<a href="#how-does-mike-prioritize-recommendations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE prioritize recommendations?</a>
+<a href="#8-decision-intelligence" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">8. Decision Intelligence</a>
+<a href="#what-is-a-decision" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What is a decision?</a>
+<a href="#how-does-mike-track-decisions" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE track decisions?</a>
+<a href="#how-does-mike-track-decision-outcomes" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE track decision outcomes?</a>
+<a href="#how-does-mike-identify-good-decisions" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify good decisions?</a>
+<a href="#how-does-mike-identify-bad-decisions" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify bad decisions?</a>
+<a href="#how-does-mike-identify-recurring-decision-patterns" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify recurring decision patterns?</a>
+<a href="#how-does-mike-help-prevent-repeated-mistakes" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE help prevent repeated mistakes?</a>
+<a href="#how-does-mike-build-organizational-memory" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE build organizational memory?</a>
+<a href="#9-qbr-intelligence" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">9. QBR Intelligence</a>
+<a href="#what-is-a-qbr" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What is a QBR?</a>
+<a href="#how-does-mike-generate-qbrs" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE generate QBRs?</a>
+<a href="#what-information-is-included" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What information is included?</a>
+<a href="#how-does-mike-identify-wins" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify wins?</a>
+<a href="#how-does-mike-identify-risks" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify risks?</a>
+<a href="#how-does-mike-identify-missed-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify missed opportunities?</a>
+<a href="#how-does-mike-identify-next-quarter-priorities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify next-quarter priorities?</a>
+<a href="#how-does-mike-identify-strategic-recommendations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify strategic recommendations?</a>
+<a href="#10-revenue-intelligence" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">10. Revenue Intelligence</a>
+<a href="#how-does-mike-identify-revenue-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify revenue opportunities?</a>
+<a href="#how-does-mike-identify-revenue-leakage" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify revenue leakage?</a>
+<a href="#how-does-mike-estimate-opportunity-value" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE estimate opportunity value?</a>
+<a href="#how-does-mike-identify-cross-sell-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify cross-sell opportunities?</a>
+<a href="#how-does-mike-identify-upsell-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify upsell opportunities?</a>
+<a href="#how-does-mike-identify-service-expansion-opportunities" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify service expansion opportunities?</a>
+<a href="#how-does-mike-forecast-pipeline-value" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE forecast pipeline value?</a>
+<a href="#11-risk-intelligence" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">11. Risk Intelligence</a>
+<a href="#how-does-mike-identify-risks" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify risks?</a>
+<a href="#what-types-of-risks-can-mike-detect" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What types of risks can MIKE detect?</a>
+<a href="#how-are-risks-scored" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How are risks scored?</a>
+<a href="#how-are-risks-prioritized" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How are risks prioritized?</a>
+<a href="#how-are-risks-escalated" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How are risks escalated?</a>
+<a href="#how-does-mike-detect-project-failure-patterns" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE detect project failure patterns?</a>
+<a href="#how-does-mike-detect-organizational-amnesia" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE detect organizational amnesia?</a>
+<a href="#how-does-mike-detect-knowledge-concentration-risk" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE detect knowledge concentration risk?</a>
+<a href="#12-organizational-intelligence" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">12. Organizational Intelligence</a>
+<a href="#what-is-organizational-intelligence" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What is organizational intelligence?</a>
+<a href="#what-is-organizational-memory" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What is organizational memory?</a>
+<a href="#how-does-mike-preserve-knowledge" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE preserve knowledge?</a>
+<a href="#how-does-mike-detect-knowledge-loss" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE detect knowledge loss?</a>
+<a href="#how-does-mike-identify-tribal-knowledge" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify tribal knowledge?</a>
+<a href="#how-does-mike-identify-single-points-of-failure" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify single points of failure?</a>
+<a href="#how-does-mike-identify-critical-experts" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify critical experts?</a>
+<a href="#how-does-mike-identify-knowledge-gaps" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE identify knowledge gaps?</a>
+<a href="#13-executive-dashboard" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">13. Executive Dashboard</a>
+<a href="#what-does-the-dashboard-show" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What does the dashboard show?</a>
+<a href="#what-kpis-are-available" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">What KPIs are available?</a>
+<a href="#how-are-opportunities-ranked" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How are opportunities ranked?</a>
+<a href="#how-are-risks-ranked" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How are risks ranked?</a>
+<a href="#how-is-roi-calculated" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is ROI calculated?</a>
+<a href="#how-is-business-value-calculated" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is business value calculated?</a>
+<a href="#how-is-confidence-calculated" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How is confidence calculated?</a>
+<a href="#how-should-executives-use-the-dashboard" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How should executives use the dashboard?</a>
+<a href="#14-ai-governance" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">14. AI Governance</a>
+<a href="#how-does-mike-use-ai" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE use AI?</a>
+<a href="#which-models-are-supported" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Which models are supported?</a>
+<a href="#how-does-mike-protect-data" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE protect data?</a>
+<a href="#how-does-mike-avoid-hallucinations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE avoid hallucinations?</a>
+<a href="#how-does-mike-explain-recommendations" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE explain recommendations?</a>
+<a href="#how-does-mike-provide-auditability" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE provide auditability?</a>
+<a href="#how-does-mike-provide-traceability" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE provide traceability?</a>
+<a href="#15-roi-business-value" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">15. ROI & Business Value</a>
+<a href="#how-does-mike-create-value" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE create value?</a>
+<a href="#how-does-mike-reduce-consulting-effort" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE reduce consulting effort?</a>
+<a href="#how-does-mike-increase-consulting-revenue" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE increase consulting revenue?</a>
+<a href="#how-does-mike-reduce-project-risk" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE reduce project risk?</a>
+<a href="#how-does-mike-reduce-onboarding-time" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE reduce onboarding time?</a>
+<a href="#how-does-mike-preserve-institutional-knowledge" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE preserve institutional knowledge?</a>
+<a href="#how-does-mike-improve-decision-quality" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE improve decision quality?</a>
+<a href="#how-does-mike-improve-operational-efficiency" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How does MIKE improve operational efficiency?</a>
+<a href="#how-do-we-measure-success" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">How do we measure success?</a>
+<a href="#16-getting-started" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">16. Getting Started</a>
+<a href="#quick-start-technical" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Quick Start (Technical)</a>
+<a href="#quick-start-business" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Quick Start (Business)</a>
+<a href="#where-to-go-next" class="slink" style="padding-left:36px;font-size:13px;font-weight:400;">Where to Go Next</a>
+<a href="#the-ultimate-question" class="slink" style="padding-left:20px;font-size:14px;font-weight:600;">The Ultimate Question</a>
+</nav>
+
+<div id="content">
+
+<div class="gm-header">
+  <div class="title">Grid Memory</div>
+  <div class="subtitle">Layer 1: Memory Engine · Layer 2: Governance · Layer 3: Intelligence</div>
+</div>
+
+
+<!-- ─── Overview ─── -->
+<div class="overview-section" id="overview">
+  <h2>System Overview</h2>
+  <p>Grid Memory is a single product with three layers. Each layer builds on the one below it. You can use just Layer 1, or all three — they work together out of the box.</p>
+
+  <div class="layer-cards">
+    <div class="layer-card" onclick="document.getElementById('layer-1-memory-engine').scrollIntoView({behavior:'smooth',block:'start'})">
+      <div class="layer-num">1</div>
+      <div class="layer-name">Memory Engine</div>
+      <div class="layer-desc">Append-only, tamper-evident storage for multi-agent teams. Write decisions, facts, observations. Query with relevance-weighted retrieval. TTL-based expiry. Context injection for subagents.</div>
+      <div class="layer-cta">Go to Layer 1 →</div>
+    </div>
+    <div class="layer-card" onclick="document.getElementById('layer-2-governance').scrollIntoView({behavior:'smooth',block:'start'})">
+      <div class="layer-num">2</div>
+      <div class="layer-name">Governance</div>
+      <div class="layer-desc">Contracts, constitutions, federation, and security. Schema enforcement, natural-language policies, cross-Grid sync, PII detection, HMAC audit trails, API key management.</div>
+      <div class="layer-cta">Go to Layer 2 →</div>
+    </div>
+    <div class="layer-card" onclick="document.getElementById('layer-3-intelligence').scrollIntoView({behavior:'smooth',block:'start'})">
+      <div class="layer-num">3</div>
+      <div class="layer-name">Intelligence (MIKE)</div>
+      <div class="layer-desc">Business intelligence derived from memory. Opportunity engine, decision graph, QBR generator, amnesia detector, client intelligence, executive dashboard.</div>
+      <div class="layer-cta">Go to Layer 3 →</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:3em;">What Should I Read?</h3>
+  <table>
+    <tr><th>You Are</th><th>Start With</th></tr>
+    <tr><td>Developer integrating the API</td><td><a href="#1-why-this-exists">Layer 1: Memory Engine</a></td></tr>
+    <tr><td>DevOps setting up security</td><td><a href="#6-memory-contracts-schema-enforcement">Layer 2: Governance</a></td></tr>
+    <tr><td>Executive wanting business insights</td><td><a href="#1-what-is-mike">Layer 3: Intelligence (MIKE)</a></td></tr>
+    <tr><td>Consultant delivering QBRs</td><td><a href="#9-qbr-intelligence">Layer 3: QBR Intelligence</a></td></tr>
+    <tr><td>Just evaluating the product</td><td><a href="#3-installation--step-by-step">Installation →</a> then <a href="#4-your-first-5-minutes">First 5 Minutes →</a></td></tr>
+  </table>
+</div>
+
+<!-- ─── Layer 1 ─── -->
+<div class="section-divider" id="layer-1-memory-engine">
+  <h2>Layer 1: Memory Engine</h2>
+  <p>The core — append-only, relevance-weighted, TTL-managed storage</p>
+</div>
+
+<!-- ─── Layer 2 ─── -->
+<div class="section-divider" id="layer-2-governance">
+  <h2>Layer 2: Governance</h2>
+  <p>Contracts, constitutions, federation, security, and audit</p>
+</div>
+
+<!-- ─── Layer 3 ─── -->
+<div class="section-divider" id="layer-3-intelligence">
+  <h2>Layer 3: Intelligence (MIKE)</h2>
+  <p>Opportunity engine, decision graph, QBR, dashboards, amnesia detection</p>
+</div>
+
+<!-- ─── Quick Start ─── -->
+<div class="section-divider" id="quick-start-reference">
+  <h2>Quick Start Reference</h2>
+  <p>Install, write, query — in 60 seconds</p>
+</div>
+
+
+<h1 id="grid-memory-the-complete-guide">Grid Memory — The Complete Guide</h1><blockquote>
+<p><strong>Everything you need to know to install, configure, use, and profit from the Grid.</strong>
+Written for technical teams who want shared memory that actually works in production.</p>
+</blockquote>
+<hr>
+<blockquote>
+<p><strong>Publication Status:</strong></p>
+<ul>
+<li><strong>npm</strong>: <code>grid-memory</code> — pre-release, not yet published</li>
+<li><strong>PyPI</strong>: <code>grid-memory</code> — pre-release, not yet published</li>
+<li><strong>GitHub</strong>: Private repository — public launch planned</li>
+<li><strong>Docker</strong>: Build locally via <code>docker build -t grid-memory .</code></li>
+</ul>
+</blockquote>
+<h2 id="table-of-contents">Table of Contents</h2><!-- TOC depth=4 --><ol>
+<li><a href="#1-why-this-exists">Why This Exists</a></li>
+<li><a href="#2-core-concepts--explained-simply">Core Concepts — Explained Simply</a></li>
+<li><a href="#3-installation--step-by-step">Installation — Step by Step</a></li>
+<li><a href="#4-your-first-5-minutes">Your First 5 Minutes</a></li>
+<li><a href="#5-everyday-operations">Everyday Operations</a></li>
+<li><a href="#6-memory-contracts-schema-enforcement">Memory Contracts (Schema Enforcement)</a></li>
+<li><a href="#7-constitutions-policy-rules">Constitutions (Policy Rules)</a></li>
+<li><a href="#8-federation-connecting-multiple-grids">Federation (Connecting Multiple Grids)</a></li>
+<li><a href="#9-business-intelligence-dashboards">Business Intelligence Dashboards</a></li>
+<li><a href="#10-security--enterprise-features">Security &amp; Enterprise Features</a></li>
+<li><a href="#11-complete-api-reference">Complete API Reference</a></li>
+<li><a href="#12-troubleshooting">Troubleshooting</a></li>
+<li><a href="#13-architecture-overview">Architecture Overview</a></li>
+</ol>
+<hr>
+<h2 id="1-why-this-exists" class="first-after-layer">1. Why This Exists</h2><h3 id="the-problem">The Problem</h3><p>Multi-agent systems fail because of <strong>memory</strong>, not reasoning. Research across 200+ execution traces shows:</p>
+<ul>
+<li><strong>40–80% failure rates</strong> in multi-agent workflows</li>
+<li><strong>37% of failures</strong> come from inter-agent misalignment — agents acting on incomplete, stale, or invisible state</li>
+<li><strong>Memory poisoning</strong> is a verified injection vector with 95%+ success rates</li>
+</ul>
+<p>When you spawn five subagents to work on a project, each one starts from zero. They don&#39;t know what the others decided. They can&#39;t see past results. They repeat mistakes and contradict each other. This is the <strong>agent amnesia problem</strong>, and it&#39;s the single biggest bottleneck in production multi-agent systems.</p>
+<h3 id="what-the-grid-does">What The Grid Does</h3><p>The Grid is a <strong>shared persistent memory layer</strong> that sits between every agent in your system:</p>
+<ul>
+<li><strong>Agents write</strong> structured entries (decisions, facts, observations, blockers)</li>
+<li><strong>Other agents read</strong> them back with relevance-weighted retrieval</li>
+<li><strong>Everything is timestamped and append-only</strong> — nothing is ever overwritten</li>
+<li><strong>TTLs expire stale data</strong> automatically</li>
+<li><strong>Policies enforce rules</strong> (no PII, no API keys, decisions must include rationale)</li>
+<li><strong>Audit trails are tamper-evident</strong> with HMAC-SHA256 hash chaining</li>
+<li><strong>Federation syncs between Grid instances</strong> across teams or data centers</li>
+</ul>
+<h3 id="who-this-is-for">Who This Is For</h3><ul>
+<li><strong>Engineering teams</strong> deploying multi-agent systems with LangGraph, CrewAI, AutoGen, or custom frameworks</li>
+<li><strong>Platform teams</strong> building shared context layers for agent fleets</li>
+<li><strong>Consultants</strong> delivering QBRs and decision intelligence to clients</li>
+<li><strong>Compliance teams</strong> needing tamper-evident audit trails for AI-driven decisions</li>
+</ul>
+<hr>
+<h2 id="2-core-concepts-explained-simply">2. Core Concepts — Explained Simply</h2><h3 id="what-is-an-entry">What Is an Entry?</h3><p>An <strong>entry</strong> is the atomic unit of memory. It&#39;s like a sticky note that an agent writes and other agents can read. Every entry has:</p>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│  Entry: grid_20260530_a1b2c3d4e5f6                   │
+│  Agent:  arch-agent                                   │
+│  Type:   decision                                     │
+│  Tags:   [topic:database, project:alpha]              │
+│  TTL:    86400 seconds (24 hours)                     │
+│  Content: &quot;Use PostgreSQL for primary storage.        │
+│            Rationale: ACID compliance, team expertise&quot;│
+│  Created: 2026-05-30T07:00:00.000Z                    │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="entry-types">Entry Types</h3><table>
+<thead>
+<tr>
+<th>Type</th>
+<th>When to Use</th>
+<th>TTL Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>decision</code></td>
+<td>An agent made a choice</td>
+<td>24h</td>
+</tr>
+<tr>
+<td><code>fact</code></td>
+<td>A verified piece of information</td>
+<td>24h</td>
+</tr>
+<tr>
+<td><code>observation</code></td>
+<td>Something noticed, not yet confirmed</td>
+<td>12h</td>
+</tr>
+<tr>
+<td><code>blocker</code></td>
+<td>Something blocking progress</td>
+<td>24h</td>
+</tr>
+<tr>
+<td><code>handoff</code></td>
+<td>Passing work between agents</td>
+<td>1h</td>
+</tr>
+<tr>
+<td><code>task_status</code></td>
+<td>Status update on ongoing work</td>
+<td>1h</td>
+</tr>
+<tr>
+<td><code>artifact_ref</code></td>
+<td>Reference to a created file/output</td>
+<td>7 days</td>
+</tr>
+<tr>
+<td><code>question</code></td>
+<td>An open question needing answer</td>
+<td>12h</td>
+</tr>
+<tr>
+<td><code>state_update</code></td>
+<td>System state change</td>
+<td>1h</td>
+</tr>
+<tr>
+<td><code>synthesis</code></td>
+<td>Aggregated insight from multiple entries</td>
+<td>24h</td>
+</tr>
+</tbody></table>
+<h3 id="tags">Tags</h3><p>Tags are how agents find related entries. Think of them as labels:</p>
+<pre><code class="language-json">&quot;tags&quot;: [&quot;topic:database&quot;, &quot;project:alpha&quot;, &quot;env:production&quot;]
+</code></pre>
+<p><strong>Best practices:</strong></p>
+<ul>
+<li>Use <code>topic:</code> prefix for subjects (e.g., <code>topic:database</code>, <code>topic:deployment</code>)</li>
+<li>Use <code>project:</code> prefix for projects (e.g., <code>project:alpha</code>, <code>project:beta</code>)</li>
+<li>Use <code>ws:</code> prefix for workspace isolation (auto-added by the server)</li>
+<li>Use <code>stage:</code> for pipeline stages (e.g., <code>stage:detected</code>, <code>stage:won</code>)</li>
+<li>Use <code>client:</code> for client names in multi-tenant setups</li>
+</ul>
+<h3 id="what-is-ttl">What Is TTL?</h3><p><strong>Time To Live</strong> — how long an entry lives before it&#39;s automatically pruned.</p>
+<ul>
+<li>After TTL expires, the entry is invisible to queries and context injection</li>
+<li>The entry still exists on disk until a prune operation</li>
+<li>TTL is set per-entry, not globally</li>
+<li>Default TTLs are set per type (see table above)</li>
+<li>Set <code>ttl_seconds: 0</code> for permanent entries (never expire)</li>
+</ul>
+<h3 id="memory-tiers">Memory Tiers</h3><p>Entries are assigned a tier that determines how long they&#39;re kept and how heavily they&#39;re weighted in relevance scoring:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Retention</th>
+<th>Typical Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>⚡ <strong>Working</strong></td>
+<td>Hours</td>
+<td>Active agent context, high churn</td>
+</tr>
+<tr>
+<td>📦 <strong>Project</strong></td>
+<td>Weeks</td>
+<td>Confirmed decisions, validated outcomes</td>
+</tr>
+<tr>
+<td>🏰 <strong>Organization</strong></td>
+<td>Years</td>
+<td>Curated knowledge, audited decisions</td>
+</tr>
+</tbody></table>
+<p>Tier promotion is automatic: entries referenced frequently get promoted to higher tiers.</p>
+<h3 id="what-is-a-workspace">What Is a Workspace?</h3><p>A <strong>workspace</strong> isolates data between different projects, clients, or teams. Every entry in a workspace gets an auto-applied <code>ws:&lt;workspace&gt;</code> tag. Queries scoped to a workspace only see entries with that tag.</p>
+<pre><code>GET /query?tags=ws:client-acme
+</code></pre>
+<h3 id="what-is-federation">What Is Federation?</h3><p><strong>Federation</strong> connects two or more Grid instances so they can share entries:</p>
+<pre><code>Grid A (San Francisco) ←→ Grid B (New York)
+</code></pre>
+<ul>
+<li>Entries synced from a peer get a <code>federated</code> tag</li>
+<li>Peers can be <code>verified</code> (shared secret), <code>unverified</code> (no secret), or <code>quarantine</code> (isolated)</li>
+<li>HMAC-SHA256 signatures ensure authenticity</li>
+<li>Conflict resolution: most recent entry wins</li>
+</ul>
+<hr>
+<h2 id="3-installation-step-by-step">3. Installation — Step by Step</h2><h3 id="prerequisites">Prerequisites</h3><ul>
+<li><strong>Node.js 18+</strong> (required for the server)</li>
+<li><strong>Python 3.8+</strong> (optional, for the Python SDK)</li>
+<li><strong>1 GB free disk</strong> (recommended for active stores)</li>
+<li><strong>100 MB minimum</strong> (for the server alone)</li>
+</ul>
+<h3 id="option-a-quick-install-curl-coming-soon">Option A: Quick Install (curl — coming soon)</h3><pre><code class="language-bash">curl -sSL https://install.grid.sh | bash
+grid start
+</code></pre>
+<p>This launches the server on port 8080 with demo mode enabled.</p>
+<h3 id="option-b-docker">Option B: Docker</h3><pre><code class="language-bash"># Pull and run
+docker run -d \
+  --name grid-memory \
+  -p 8080:8080 \
+  -v grid-data:/data \
+  -e GRID_SEED_MODE=true \
+  grid-memory:latest
+
+# Verify it&#39;s running
+curl http://localhost:8080/health
+</code></pre>
+<p>Expected response:</p>
+<pre><code class="language-json">{
+  &quot;status&quot;: &quot;ok&quot;,
+  &quot;store&quot;: { &quot;total_entries&quot;: 8, &quot;alive_entries&quot;: 8, &quot;store_size_kb&quot;: 4 },
+  &quot;version&quot;: &quot;1.0.0&quot;
+}
+</code></pre>
+<h3 id="option-c-from-source-nodejs">Option C: From Source (Node.js)</h3><pre><code class="language-bash"># Clone or copy the grid directory
+cd grid-memory
+
+# Install dependencies
+npm install
+
+# Start the server
+node server.js
+</code></pre>
+<p>Output:</p>
+<pre><code>GRID_ENFORCE_AUTH is not set. Running in DEVELOPMENT MODE with NO authentication.
+Grid Memory Server
+Listening on http://0.0.0.0:8080
+Seed mode (auto): 8 entries from 3 agents
+</code></pre>
+<h3 id="option-d-python-sdk">Option D: Python SDK</h3><pre><code class="language-bash"># Install from the SDK directory
+cd grid-memory/sdk/python
+pip install -e .
+
+# Or directly
+# pip install grid-memory (pre-release) 
+</code></pre>
+<h3 id="verifying-the-installation">Verifying the Installation</h3><pre><code class="language-bash"># Health check
+curl http://localhost:8080/health
+
+# Quick info
+curl http://localhost:8080/info
+</code></pre>
+<p>Both commands should return JSON. If they do, the Grid is running.</p>
+<hr>
+<h2 id="4-your-first-5-minutes">4. Your First 5 Minutes</h2><h3 id="step-1-start-the-server">Step 1: Start the Server</h3><pre><code class="language-bash">cd grid-memory
+node server.js
+</code></pre>
+<p>The server automatically:</p>
+<ol>
+<li>Checks if the Grid is empty</li>
+<li>Seeds 8 demo entries from 3 agents (arch-agent, ops-agent, sec-agent)</li>
+<li>Makes them available immediately</li>
+</ol>
+<h3 id="step-2-open-the-dashboard">Step 2: Open the Dashboard</h3><p>Open your browser to:</p>
+<pre><code>http://localhost:8080/dashboard
+</code></pre>
+<p>You&#39;ll see:</p>
+<ul>
+<li>Activity timeline of seeded entries</li>
+<li>Agent activity breakdown</li>
+<li>Store statistics</li>
+</ul>
+<p>If the dashboard doesn&#39;t load, try:</p>
+<pre><code>http://localhost:8080/dashboard/index.html
+</code></pre>
+<h3 id="step-3-write-your-first-entry">Step 3: Write Your First Entry</h3><pre><code class="language-bash">curl -X POST http://localhost:8080/write \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;agent_id&quot;: &quot;my-agent&quot;,
+    &quot;type&quot;: &quot;decision&quot;,
+    &quot;content&quot;: &quot;Use PostgreSQL for primary storage. Rationale: ACID compliance, team expertise.&quot;,
+    &quot;tags&quot;: [&quot;topic:database&quot;, &quot;project:my-project&quot;],
+    &quot;ttl_seconds&quot;: 86400
+  }&#39;
+</code></pre>
+<p>Expected response:</p>
+<pre><code class="language-json">{
+  &quot;entry_id&quot;: &quot;grid_20260530_a1b2c3d4e5f6&quot;,
+  &quot;agent_id&quot;: &quot;my-agent&quot;,
+  &quot;created_at&quot;: &quot;2026-05-30T07:00:00.000Z&quot;,
+  &quot;ttl_expires_at&quot;: &quot;2026-05-31T07:00:00.000Z&quot;
+}
+</code></pre>
+<h3 id="step-4-read-it-back">Step 4: Read It Back</h3><pre><code class="language-bash">curl &quot;http://localhost:8080/query?tags=topic:database&amp;max=5&quot;
+</code></pre>
+<h3 id="step-5-see-your-instant-roi">Step 5: See Your Instant ROI</h3><pre><code class="language-bash">curl http://localhost:8080/roi
+</code></pre>
+<p>This tells you:</p>
+<ul>
+<li>How many duplicates were prevented</li>
+<li>How many contradictions were detected</li>
+<li>How many opportunities were found</li>
+<li>How much time you saved</li>
+</ul>
+<hr>
+<h2 id="5-everyday-operations">5. Everyday Operations</h2><h3 id="writing-entries">Writing Entries</h3><p><strong>Via curl (HTTP API):</strong></p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/write \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;agent_id&quot;: &quot;my-agent&quot;,
+    &quot;type&quot;: &quot;decision&quot;,
+    &quot;content&quot;: &quot;Use PostgreSQL for primary storage. Rationale: ACID compliance, team expertise.&quot;,
+    &quot;tags&quot;: [&quot;topic:database&quot;, &quot;project:my-project&quot;],
+    &quot;ttl_seconds&quot;: 86400
+  }&#39;
+</code></pre>
+<p><strong>Via Node.js SDK:</strong></p>
+<pre><code class="language-javascript">const { Grid } = require(&#39;./reference/store.js&#39;);
+const grid = new Grid();
+
+await grid.write({
+  agent_id: &#39;my-agent&#39;,
+  type: &#39;decision&#39;,
+  content: &#39;Use PostgreSQL for primary storage. Rationale: ACID compliance, team expertise.&#39;,
+  tags: [&#39;topic:database&#39;, &#39;project:my-project&#39;],
+  ttl_seconds: 86400,
+});
+</code></pre>
+<p><strong>Via Python SDK:</strong></p>
+<pre><code class="language-python">from grid_memory import LocalGrid
+
+grid = LocalGrid()
+grid.write(
+    agent_id=&#39;my-agent&#39;,
+    type=&#39;decision&#39;,
+    content=&#39;Use PostgreSQL for primary storage. Rationale: ACID compliance, team expertise.&#39;,
+    tags=[&#39;topic:database&#39;, &#39;project:my-project&#39;],
+    ttl_seconds=86400,
+)
+</code></pre>
+<h3 id="reading-entries">Reading Entries</h3><p><strong>By tag:</strong></p>
+<pre><code class="language-bash">curl &quot;http://localhost:8080/query?tags=topic:database&quot;
+</code></pre>
+<p><strong>By agent:</strong></p>
+<pre><code class="language-bash">curl &quot;http://localhost:8080/query?agents=arch-agent&quot;
+</code></pre>
+<p><strong>By type:</strong></p>
+<pre><code class="language-bash">curl &quot;http://localhost:8080/query?type=decision&quot;
+</code></pre>
+<p><strong>Combined:</strong></p>
+<pre><code class="language-bash">curl &quot;http://localhost:8080/query?tags=topic:database&amp;agents=arch-agent&amp;type=decision&amp;max=10&quot;
+</code></pre>
+<p><strong>Advanced query (POST with JSON body):</strong></p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/query \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;tags&quot;: [&quot;topic:database&quot;],
+    &quot;agents&quot;: [&quot;arch-agent&quot;],
+    &quot;type&quot;: &quot;decision&quot;,
+    &quot;max&quot;: 20,
+    &quot;since&quot;: &quot;2026-05-01T00:00:00Z&quot;
+  }&#39;
+</code></pre>
+<h3 id="injecting-context">Injecting Context</h3><p>Before spawning a subagent, inject relevant context so it doesn&#39;t start from zero:</p>
+<pre><code class="language-bash">curl &quot;http://localhost:8080/inject?context=I%27m%20building%20a%20database%20migration%20plan&quot;
+</code></pre>
+<p>Returns a condensed block of relevant entries (max 4KB) that you can insert into the subagent&#39;s system prompt.</p>
+<h3 id="pruning-expired-data">Pruning Expired Data</h3><pre><code class="language-bash"># Manual prune
+curl -X POST http://localhost:8080/prune
+
+# Or let it happen automatically — the server prunes on a timer
+</code></pre>
+<h3 id="forgetting-an-entry">Forgetting an Entry</h3><pre><code class="language-bash">curl -X DELETE http://localhost:8080/forget/grid_20260530_a1b2c3d4e5f6
+</code></pre>
+<h3 id="checking-server-status">Checking Server Status</h3><pre><code class="language-bash">curl http://localhost:8080/info
+</code></pre>
+<p>Returns total entries, alive entries, unique agents, unique tags, and store size.</p>
+<hr>
+<div class="layer-inline-divider" id="layer-2-governance-anchor"></div><h2 id="6-memory-contracts-schema-enforcement">6. Memory Contracts (Schema Enforcement)</h2><p>Memory Contracts ensure that entries follow a predictable schema. Think of them as <strong>type checking for memory</strong>.</p>
+<h3 id="why-use-contracts">Why Use Contracts?</h3><p>Without contracts, agents can write anything in any format. This makes it hard to query, analyze, or trust the data. With contracts:</p>
+<ul>
+<li>Entries follow a defined schema</li>
+<li>Required fields must be present</li>
+<li>Values are type-checked (string, number, boolean, enum, semver)</li>
+<li>Violations can warn or reject the write</li>
+</ul>
+<h3 id="registering-a-contract">Registering a Contract</h3><pre><code class="language-bash">curl -X POST http://localhost:8080/contracts \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;scope&quot;: &quot;topic:deployment&quot;,
+    &quot;schema&quot;: {
+      &quot;environment&quot;: &quot;enum:production|staging|development&quot;,
+      &quot;version&quot;: &quot;semver&quot;,
+      &quot;deployed_by&quot;: &quot;string&quot;,
+      &quot;success&quot;: &quot;boolean&quot;,
+      &quot;required&quot;: [&quot;environment&quot;, &quot;version&quot;, &quot;success&quot;]
+    },
+    &quot;enforce&quot;: &quot;reject&quot;
+  }&#39;
+</code></pre>
+<h3 id="enforce-modes">Enforce Modes</h3><table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>validate</code> (default)</td>
+<td>Logs warnings but allows the write</td>
+</tr>
+<tr>
+<td><code>reject</code></td>
+<td>Blocks the write if validation fails</td>
+</tr>
+<tr>
+<td><code>warn</code></td>
+<td>Same as validate — logs warnings</td>
+</tr>
+</tbody></table>
+<h3 id="what-happens-on-violation">What Happens on Violation</h3><p>If <code>enforce: &quot;reject&quot;</code> and the entry doesn&#39;t match the schema:</p>
+<pre><code class="language-json">{
+  &quot;error&quot;: &quot;Contract validation failed: Field &#39;environment&#39;: Expected one of: production, staging, development&quot;,
+  &quot;code&quot;: &quot;CONTRACT_VIOLATION&quot;
+}
+</code></pre>
+<h3 id="auto-discovering-contracts">Auto-Discovering Contracts</h3><p>The Grid can scan your existing entries and suggest contract schemas automatically:</p>
+<pre><code class="language-bash">curl http://localhost:8080/auto-contracts
+</code></pre>
+<pre><code class="language-json">{
+  &quot;suggestions&quot;: [
+    {
+      &quot;scope&quot;: &quot;topic:database&quot;,
+      &quot;suggested_schema&quot;: { &quot;database&quot;: &quot;string&quot;, &quot;Rationale&quot;: &quot;string&quot; },
+      &quot;observed_entries&quot;: 3,
+      &quot;confidence&quot;: 100
+    }
+  ]
+}
+</code></pre>
+<p>To approve a suggestion and make it a real contract:</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/auto-contracts/approve \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;scope&quot;: &quot;topic:database&quot;,
+    &quot;suggested_schema&quot;: { &quot;database&quot;: &quot;string&quot;, &quot;Rationale&quot;: &quot;string&quot; }
+  }&#39;
+</code></pre>
+<h3 id="listing-all-contracts">Listing All Contracts</h3><pre><code class="language-bash">curl http://localhost:8080/contracts
+</code></pre>
+<h3 id="removing-a-contract">Removing a Contract</h3><pre><code class="language-bash">curl -X DELETE http://localhost:8080/contracts/topic:deployment
+</code></pre>
+<hr>
+<h2 id="7-constitutions-policy-rules">7. Constitutions (Policy Rules)</h2><p>Constitutions are <strong>behavioral rules</strong> enforced at write time. While contracts check <em>format</em>, constitutions check <em>content</em>.</p>
+<h3 id="why-use-constitutions">Why Use Constitutions?</h3><ul>
+<li>Prevent agents from storing API keys or secrets</li>
+<li>Ensure decisions include rationale</li>
+<li>Block PII from being written to memory</li>
+<li>Enforce compliance rules (HIPAA, SOC2)</li>
+<li>Make agents accountable to team policies</li>
+</ul>
+<h3 id="writing-natural-language-policies">Writing Natural Language Policies</h3><p>No need to learn a DSL. Write policies in plain English:</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/constitution/from-text \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;text&quot;: &quot;Never store API keys in content. All decisions must include rationale. Don&#39;\&#39;&#39;t include PII.&quot;,
+    &quot;enforceMode&quot;: &quot;block&quot;
+  }&#39;
+</code></pre>
+<p>The Grid parses the text into structured rules:</p>
+<pre><code class="language-json">{
+  &quot;generated&quot;: {
+    &quot;rules&quot;: [
+      { &quot;name&quot;: &quot;Never store API keys in content&quot;, &quot;blockedPatterns&quot;: [&quot;api.?key&quot;] },
+      { &quot;name&quot;: &quot;All decisions must include rationale&quot;, &quot;requiredWords&quot;: [&quot;rationale&quot;], &quot;entryTypes&quot;: [&quot;decision&quot;] },
+      { &quot;name&quot;: &quot;Don&#39;t include PII&quot;, &quot;blockedPatterns&quot;: [&quot;pii&quot;] }
+    ]
+  }
+}
+</code></pre>
+<h3 id="registering-a-constitution-programmatically">Registering a Constitution Programmatically</h3><pre><code class="language-bash">curl -X POST http://localhost:8080/constitution \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;X-Grid-Workspace: default&quot; \
+  -d &#39;{
+    &quot;rules&quot;: [
+      &quot;All decisions must include rationale&quot;,
+      &quot;Never store API keys in content&quot;,
+      &quot;Don&#39;\&#39;&#39;t include PII&quot;
+    ],
+    &quot;enforceMode&quot;: &quot;block&quot;
+  }&#39;
+</code></pre>
+<h3 id="enforce-modes">Enforce Modes</h3><table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>validate</code> (default)</td>
+<td>Returns warnings, allows the write</td>
+</tr>
+<tr>
+<td><code>block</code></td>
+<td>Rejects the write with CONSTITUTION_VIOLATION error</td>
+</tr>
+</tbody></table>
+<h3 id="what-happens-on-violation-block-mode">What Happens on Violation (block mode)</h3><pre><code class="language-json">{
+  &quot;error&quot;: &quot;Constitution validation failed: Rule \&quot;Never store API keys in content\&quot;: entry matches blocked pattern \&quot;api.?key\&quot;&quot;,
+  &quot;code&quot;: &quot;CONSTITUTION_VIOLATION&quot;
+}
+</code></pre>
+<h3 id="listing-constitutions">Listing Constitutions</h3><pre><code class="language-bash">curl http://localhost:8080/constitution
+</code></pre>
+<h3 id="removing-a-constitution">Removing a Constitution</h3><pre><code class="language-bash">curl -X DELETE http://localhost:8080/constitution \
+  -H &quot;X-Grid-Workspace: default&quot;
+</code></pre>
+<h3 id="example-policy-templates">Example Policy Templates</h3><p><strong>Decision integrity:</strong></p>
+<pre><code>All decisions must include rationale
+All decisions must include alternatives considered
+Never store API keys in content
+</code></pre>
+<p><strong>Security:</strong></p>
+<pre><code>Never include PII in content
+Don&#39;t include credentials in content
+All entries must include source attribution
+</code></pre>
+<p><strong>Compliance:</strong></p>
+<pre><code>Never include PHI in content
+All decisions must include rationale
+All entries must include compliance tags
+</code></pre>
+<hr>
+<h2 id="8-federation-connecting-multiple-grids">8. Federation (Connecting Multiple Grids)</h2><p>Federation lets you connect Grid instances across teams, data centers, or client environments.</p>
+<h3 id="quick-connect-one-click">Quick Connect (One-Click)</h3><p>The easiest way to connect two Grids:</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/federation/quick-connect \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;peerUrl&quot;: &quot;http://other-grid.internal:8080&quot;
+  }&#39;
+</code></pre>
+<p>This:</p>
+<ol>
+<li>Checks if the peer is reachable (GET /health)</li>
+<li>Gets peer info (GET /info)</li>
+<li>Generates a shared secret</li>
+<li>Registers the peer locally</li>
+<li>Registers YOUR Grid on the remote (by calling POST /federation/peers on the remote)</li>
+<li>Returns the connection details</li>
+</ol>
+<h3 id="manual-peer-registration">Manual Peer Registration</h3><pre><code class="language-bash">curl -X POST http://localhost:8080/federation/peers \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;url&quot;: &quot;http://sf-grid.internal:8080&quot;,
+    &quot;trustLevel&quot;: &quot;verified&quot;,
+    &quot;sharedSecret&quot;: &quot;my-shared-secret&quot;
+  }&#39;
+</code></pre>
+<h3 id="trust-levels">Trust Levels</h3><table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>verified</code></td>
+<td>Has shared secret — entries get full trust score (80)</td>
+</tr>
+<tr>
+<td><code>unverified</code></td>
+<td>No shared secret — entries get low trust score (40)</td>
+</tr>
+<tr>
+<td><code>quarantine</code></td>
+<td>Isolated — entries get minimal trust score (10)</td>
+</tr>
+</tbody></table>
+<h3 id="syncing-from-a-peer">Syncing from a Peer</h3><pre><code class="language-bash"># Trigger sync from a specific peer
+curl -X POST http://localhost:8080/federation/sync/http%3A%2F%2Fsf-grid.internal%3A8080
+</code></pre>
+<h3 id="listing-peers">Listing Peers</h3><pre><code class="language-bash">curl http://localhost:8080/federation/peers
+</code></pre>
+<p>Returns peers without their shared secrets (security):</p>
+<pre><code class="language-json">{
+  &quot;peers&quot;: [
+    {
+      &quot;url&quot;: &quot;http://sf-grid.internal:8080&quot;,
+      &quot;trustLevel&quot;: &quot;verified&quot;,
+      &quot;trustScore&quot;: 80,
+      &quot;has_secret&quot;: true,
+      &quot;last_synced_at&quot;: &quot;2026-05-30T07:00:00.000Z&quot;
+    }
+  ]
+}
+</code></pre>
+<h3 id="removing-a-peer">Removing a Peer</h3><pre><code class="language-bash">curl -X DELETE &quot;http://localhost:8080/federation/peers/http%3A%2F%2Fsf-grid.internal%3A8080&quot;
+</code></pre>
+<h3 id="how-signatures-work">How Signatures Work</h3><p>When a peer syncs with you:</p>
+<ol>
+<li>They sign the request with HMAC-SHA256 using the shared secret</li>
+<li>The payload is <code>timestamp.body</code></li>
+<li>You verify the signature against the stored shared secret</li>
+<li>Reject if invalid, expired (&gt;5 min), or missing</li>
+</ol>
+<p>This prevents unauthorized syncs and replay attacks.</p>
+<hr>
+<h2 id="9-business-intelligence-dashboards">9. Business Intelligence Dashboards</h2><p>The Grid generates real business value from existing data — no extra setup required.</p>
+<h3 id="mike-dashboard">MIKE Dashboard</h3><p>The operations dashboard combines everything into a single view:</p>
+<pre><code class="language-bash">curl http://localhost:8080/mike/dashboard
+</code></pre>
+<p>Returns:</p>
+<pre><code class="language-json">{
+  &quot;summary&quot;: {
+    &quot;total_entries&quot;: 47,
+    &quot;unique_agents&quot;: 5,
+    &quot;unique_workspaces&quot;: 2,
+    &quot;oldest_entry&quot;: &quot;...&quot;,
+    &quot;newest_entry&quot;: &quot;...&quot;
+  },
+  &quot;clients&quot;: [...],
+  &quot;opportunities&quot;: {
+    &quot;total&quot;: 12,
+    &quot;by_stage&quot;: { &quot;detected&quot;: 5, &quot;reviewed&quot;: 3, &quot;won&quot;: 2, &quot;lost&quot;: 2 },
+    &quot;pipeline_value&quot;: &quot;$240,000&quot;,
+    &quot;win_rate&quot;: &quot;50%&quot;
+  },
+  &quot;risks&quot;: [...],
+  &quot;revenue&quot;: {
+    &quot;won_deals&quot;: 2,
+    &quot;total_revenue&quot;: &quot;$120,000&quot;,
+    &quot;pipeline&quot;: &quot;$240,000&quot;,
+    &quot;avg_accuracy&quot;: &quot;85%&quot;
+  }
+}
+</code></pre>
+<h3 id="executive-dashboard">Executive Dashboard</h3><p>C-suite view combining KPIs, decisions, opportunities, risks, amnesia, and quick actions:</p>
+<pre><code class="language-bash">curl http://localhost:8080/executive/dashboard
+</code></pre>
+<h3 id="decision-graph">Decision Graph</h3><p>Visualize every decision, who made it, why, and what happened:</p>
+<pre><code class="language-bash"># Full graph
+curl http://localhost:8080/decisions/graph
+
+# Stats only
+curl http://localhost:8080/decisions/stats
+</code></pre>
+<h3 id="qbr-reports">QBR Reports</h3><p>Generate Quarterly Business Review reports automatically:</p>
+<pre><code class="language-bash"># Current quarter
+curl http://localhost:8080/qbr
+
+# Specific quarter
+curl &quot;http://localhost:8080/qbr?period=Q1-2026&quot;
+
+# POST with custom parameters
+curl -X POST http://localhost:8080/qbr/generate \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{&quot;period&quot;: &quot;Q1-2026&quot;, &quot;include&quot;: [&quot;decisions&quot;, &quot;opportunities&quot;, &quot;risks&quot;]}&#39;
+</code></pre>
+<h3 id="amnesia-detection">Amnesia Detection</h3><p>Find knowledge gaps before they become problems:</p>
+<pre><code class="language-bash">curl http://localhost:8080/amnesia/detect
+</code></pre>
+<p>Detects:</p>
+<ul>
+<li><strong>Gaps</strong> — topics not discussed in 30+ days</li>
+<li><strong>Orphans</strong> — decisions made but never acted upon</li>
+<li><strong>Stale decisions</strong> — no review in 60+ days</li>
+<li><strong>Single-points-of-failure</strong> — knowledge held by only one agent</li>
+</ul>
+<h3 id="instant-roi">Instant ROI</h3><pre><code class="language-bash">curl http://localhost:8080/roi
+</code></pre>
+<p>Shows: duplicates prevented, contradictions detected, opportunities found, time saved.</p>
+<h3 id="setup-wizard">Setup Wizard</h3><p>If you&#39;re starting fresh, let the wizard guide you:</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/setup-wizard
+</code></pre>
+<p>Returns steps to configure the Grid for your use case. Send answers to auto-configure:</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/setup-wizard \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;purpose&quot;: &quot;Agent team coordination&quot;,
+    &quot;agents&quot;: &quot;5–20&quot;,
+    &quot;compliance&quot;: &quot;No&quot;
+  }&#39;
+</code></pre>
+<hr>
+<h2 id="10-security-enterprise-features">10. Security & Enterprise Features</h2><h3 id="authentication">Authentication</h3><h4 id="development-mode-default">Development Mode (Default)</h4><p>No authentication required. All endpoints are open. Good for local development.</p>
+<pre><code class="language-bash"># Start in dev mode (default)
+node server.js
+</code></pre>
+<h4 id="production-mode">Production Mode</h4><p>Set <code>GRID_ENFORCE_AUTH=true</code> to enable the full security pipeline.</p>
+<pre><code class="language-bash">GRID_ENFORCE_AUTH=true node server.js
+</code></pre>
+<p>Every request goes through:</p>
+<pre><code>Authentication → Authorization → Workspace Validation → Rate Limiting → Operation → Audit
+</code></pre>
+<h4 id="creating-api-keys">Creating API Keys</h4><pre><code class="language-bash"># Create an admin key
+curl -X POST http://localhost:8080/gateway/key/create \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;label&quot;: &quot;admin-key&quot;,
+    &quot;permission&quot;: &quot;admin&quot;,
+    &quot;workspace&quot;: &quot;*&quot;
+  }&#39;
+
+# Returns: { key_id, plaintext_key: &quot;grid_...&quot; }
+# Save the plaintext key — it&#39;s shown only once!
+</code></pre>
+<h4 id="permission-levels">Permission Levels</h4><table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Can</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>viewer</code></td>
+<td>Read queries, health checks</td>
+</tr>
+<tr>
+<td><code>analyst</code></td>
+<td>View + write entries</td>
+</tr>
+<tr>
+<td><code>architect</code></td>
+<td>Analyst + manage contracts, constitutions</td>
+</tr>
+<tr>
+<td><code>executive</code></td>
+<td>Architect + manage keys, audit logs</td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td>Everything</td>
+</tr>
+</tbody></table>
+<h4 id="using-api-keys">Using API Keys</h4><pre><code class="language-bash">curl http://localhost:8080/health \
+  -H &quot;Authorization: Bearer grid_a1b2c3d4e5f6...&quot;
+</code></pre>
+<h4 id="key-rotation">Key Rotation</h4><pre><code class="language-bash"># Rotate an API key (generates new key, revokes old)
+curl -X POST http://localhost:8080/gateway/key/rotate/key_a1b2c3d4
+</code></pre>
+<h4 id="listing-and-revoking-keys">Listing and Revoking Keys</h4><pre><code class="language-bash"># List all keys
+curl http://localhost:8080/gateway/keys
+
+# Revoke a key
+curl -X DELETE http://localhost:8080/gateway/key/revoke/key_a1b2c3d4
+</code></pre>
+<h3 id="pii-detection">PII Detection</h3><p>The Grid automatically scans entries for:</p>
+<ul>
+<li><strong>SSN</strong> (<code>\b\d{3}-\d{2}-\d{4}\b</code>)</li>
+<li><strong>Credit Cards</strong> (<code>\b(?:\d{4}[- ]?){3}\d{4}\b</code>)</li>
+<li><strong>Email</strong> (<code>\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b</code>)</li>
+<li><strong>Phone</strong> (<code>\b\d{3}[-.]?\d{3}[-.]?\d{4}\b</code>)</li>
+<li><strong>Medical IDs</strong> (<code>MRN\d{4,10}</code>)</li>
+</ul>
+<h4 id="scanning-content-for-pii">Scanning Content for PII</h4><pre><code class="language-bash">curl -X POST http://localhost:8080/gateway/pii/scan \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;content&quot;: &quot;My SSN is 123-45-6789 and email is user@example.com&quot;
+  }&#39;
+</code></pre>
+<p>Returns:</p>
+<pre><code class="language-json">{
+  &quot;hasPII&quot;: true,
+  &quot;findings&quot;: [
+    { &quot;type&quot;: &quot;SSN&quot;, &quot;severity&quot;: &quot;critical&quot;, &quot;match&quot;: &quot;123-45-6789&quot; },
+    { &quot;type&quot;: &quot;Email&quot;, &quot;severity&quot;: &quot;high&quot;, &quot;match&quot;: &quot;user@example.com&quot; }
+  ],
+  &quot;redacted&quot;: &quot;My SSN is [REDACTED SSN] and email is [REDACTED Email]&quot;
+}
+</code></pre>
+<h3 id="audit-trail-tamper-evident">Audit Trail (Tamper-Evident)</h3><p>Every operation is logged with HMAC-SHA256 hash chaining. Each audit entry contains:</p>
+<pre><code class="language-json">{
+  &quot;id&quot;: 1,
+  &quot;timestamp&quot;: &quot;2026-05-30T07:00:00.000Z&quot;,
+  &quot;action&quot;: &quot;write&quot;,
+  &quot;result&quot;: &quot;allowed&quot;,
+  &quot;method&quot;: &quot;POST&quot;,
+  &quot;path&quot;: &quot;/write&quot;,
+  &quot;workspace&quot;: &quot;default&quot;,
+  &quot;actor&quot;: &quot;arch-agent&quot;,
+  &quot;key_id&quot;: &quot;key_a1b2c3d4&quot;,
+  &quot;ip&quot;: &quot;192.168.1.100&quot;,
+  &quot;detail&quot;: &quot;entry_id=grid_...&quot;,
+  &quot;previous_hash&quot;: &quot;a1b2c3d4...&quot;,
+  &quot;_hash&quot;: &quot;e5f6a7b8...&quot;
+}
+</code></pre>
+<h4 id="viewing-the-audit-log">Viewing the Audit Log</h4><pre><code class="language-bash">curl http://localhost:8080/gateway/audit
+</code></pre>
+<h4 id="verifying-audit-integrity">Verifying Audit Integrity</h4><pre><code class="language-bash">curl http://localhost:8080/gateway/audit/verify
+</code></pre>
+<p>If the chain is intact:</p>
+<pre><code class="language-json">{ &quot;valid&quot;: true }
+</code></pre>
+<p>If tampered:</p>
+<pre><code class="language-json">{ &quot;valid&quot;: false, &quot;brokenAtIndex&quot;: 3, &quot;reason&quot;: &quot;chain break: prev hash mismatch at 3&quot; }
+</code></pre>
+<h3 id="rate-limiting">Rate Limiting</h3><p>The Grid applies per-endpoint rate limits in memory:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Rate Limit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>General</td>
+<td>100/min</td>
+</tr>
+<tr>
+<td><code>/ask</code></td>
+<td>30/min</td>
+</tr>
+<tr>
+<td><code>/subscribe</code></td>
+<td>20/min</td>
+</tr>
+<tr>
+<td><code>/agents/reputation</code></td>
+<td>30/min</td>
+</tr>
+<tr>
+<td><code>/contracts</code></td>
+<td>30/min</td>
+</tr>
+<tr>
+<td><code>/export</code></td>
+<td>10/min</td>
+</tr>
+<tr>
+<td><code>/federation</code></td>
+<td>20/min</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="11-complete-api-reference">11. Complete API Reference</h2><h3 id="core-endpoints">Core Endpoints</h3><h4 id="post-write">`POST /write`</h4><p>Write a new entry.</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/write \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;agent_id&quot;: &quot;my-agent&quot;,
+    &quot;type&quot;: &quot;decision&quot;,
+    &quot;content&quot;: &quot;Use PostgreSQL for primary storage.&quot;,
+    &quot;tags&quot;: [&quot;topic:database&quot;, &quot;project:alpha&quot;],
+    &quot;ttl_seconds&quot;: 86400,
+    &quot;session_id&quot;: &quot;sess_123&quot;,
+    &quot;parent_entry&quot;: &quot;grid_...&quot;
+  }&#39;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>agent_id</code></td>
+<td>Yes</td>
+<td>string</td>
+<td>Who wrote this</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>Yes</td>
+<td>string</td>
+<td>One of: decision, fact, observation, blocker, handoff, task_status, artifact_ref, question, state_update, synthesis</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>Yes</td>
+<td>string</td>
+<td>The actual content</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>No</td>
+<td>array</td>
+<td>List of tag strings</td>
+</tr>
+<tr>
+<td><code>ttl_seconds</code></td>
+<td>No</td>
+<td>number</td>
+<td>Time to live in seconds (uses type default if omitted)</td>
+</tr>
+<tr>
+<td><code>session_id</code></td>
+<td>No</td>
+<td>string</td>
+<td>Session identifier for grouping</td>
+</tr>
+<tr>
+<td><code>parent_entry</code></td>
+<td>No</td>
+<td>string</td>
+<td>Link to a parent entry (for threading)</td>
+</tr>
+</tbody></table>
+<h4 id="get-query">`GET /query`</h4><p>Query entries by tags, agents, type, etc.</p>
+<pre><code>GET /query?tags=topic:database,project:alpha&amp;agents=arch-agent&amp;type=decision&amp;max=20&amp;since=2026-01-01T00:00:00Z
+</code></pre>
+<h4 id="post-query">`POST /query`</h4><p>Same as GET/query but with JSON body for complex queries.</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/query \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;tags&quot;: [&quot;topic:database&quot;],
+    &quot;agents&quot;: [&quot;arch-agent&quot;],
+    &quot;types&quot;: [&quot;decision&quot;, &quot;fact&quot;],
+    &quot;max&quot;: 50,
+    &quot;since&quot;: &quot;2026-01-01T00:00:00Z&quot;,
+    &quot;before&quot;: &quot;2026-12-31T23:59:59Z&quot;
+  }&#39;
+</code></pre>
+<h4 id="getpost-inject">`GET|POST /inject`</h4><p>Get condensed context block for subagent injection.</p>
+<pre><code>GET /inject?context=I%27m%20working%20on%20database%20migration
+</code></pre>
+<p>Returns max 4KB of relevant context.</p>
+<h4 id="post-prune">`POST /prune`</h4><p>Remove expired entries.</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/prune
+</code></pre>
+<h4 id="delete-forgetid">`DELETE /forget/:id`</h4><p>Remove a specific entry.</p>
+<pre><code class="language-bash">curl -X DELETE http://localhost:8080/forget/grid_20260530_a1b2c3d4e5f6
+</code></pre>
+<h4 id="get-info">`GET /info`</h4><p>Store statistics.</p>
+<pre><code class="language-bash">curl http://localhost:8080/info
+</code></pre>
+<p>Returns: total_entries, alive_entries, unique_agents, unique_tags, store_size_kb, expired_entries.</p>
+<h4 id="get-health">`GET /health`</h4><p>Health check.</p>
+<pre><code class="language-bash">curl http://localhost:8080/health
+</code></pre>
+<h4 id="get-export">`GET /export`</h4><p>Export all entries (for federation or backup).</p>
+<pre><code class="language-bash">curl http://localhost:8080/export
+</code></pre>
+<h4 id="post-import">`POST /import`</h4><p>Import entries from an export file.</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8080/import \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;entries&quot;: [...]
+  }&#39;
+</code></pre>
+<h3 id="contract-endpoints">Contract Endpoints</h3><h4 id="post-contracts">`POST /contracts`</h4><p>Register a contract.</p>
+<h4 id="get-contracts">`GET /contracts`</h4><p>List all contracts.</p>
+<h4 id="delete-contractsscope">`DELETE /contracts/:scope`</h4><p>Remove a contract.</p>
+<h4 id="get-auto-contracts">`GET /auto-contracts`</h4><p>Get auto-generated contract suggestions.</p>
+<h4 id="post-auto-contractsapprove">`POST /auto-contracts/approve`</h4><p>Approve a suggestion and register as contract.</p>
+<h4 id="post-auto-contractsreject">`POST /auto-contracts/reject`</h4><p>Reject a suggestion (won&#39;t be suggested again).</p>
+<h4 id="get-auto-contractsstate">`GET /auto-contracts/state`</h4><p>View approval state (approved, rejected, pending scopes).</p>
+<h3 id="constitution-endpoints">Constitution Endpoints</h3><h4 id="post-constitution">`POST /constitution`</h4><p>Register constitution rules.</p>
+<h4 id="get-constitution">`GET /constitution`</h4><p>List constitutions for workspace.</p>
+<h4 id="delete-constitution">`DELETE /constitution`</h4><p>Remove constitution for workspace.</p>
+<h4 id="post-constitutionfrom-text">`POST /constitution/from-text`</h4><p>Generate constitution rules from natural language text.</p>
+<h3 id="federation-endpoints">Federation Endpoints</h3><h4 id="post-federationpeers">`POST /federation/peers`</h4><p>Register a peer.</p>
+<h4 id="get-federationpeers">`GET /federation/peers`</h4><p>List registered peers.</p>
+<h4 id="delete-federationpeersurl">`DELETE /federation/peers/:url`</h4><p>Remove a peer.</p>
+<h4 id="post-federationsyncurl">`POST /federation/sync/:url`</h4><p>Trigger sync from a peer.</p>
+<h4 id="post-federationpeers-or-federationquick-connect">`POST /federation/peers (or /federation/quick-connect)`</h4><p>One-click peer connection (auto-discovers, generates secret, registers both sides).</p>
+<h3 id="gateway-management-endpoints">Gateway Management Endpoints</h3><h4 id="post-gatewaykeycreate">`POST /gateway/key/create`</h4><p>Create a new API key.</p>
+<h4 id="get-gatewaykeys">`GET /gateway/keys`</h4><p>List all API keys.</p>
+<h4 id="delete-gatewaykeyrevokeid">`DELETE /gateway/key/revoke/:id`</h4><p>Revoke an API key.</p>
+<h4 id="post-gatewaykeyrotateid">`POST /gateway/key/rotate/:id`</h4><p>Rotate an API key (replace + revoke).</p>
+<h4 id="get-gatewayaudit">`GET /gateway/audit`</h4><p>View audit log entries.</p>
+<h4 id="get-gatewayauditverify">`GET /gateway/audit/verify`</h4><p>Verify audit hash chain integrity.</p>
+<h4 id="post-gatewaypiiscan">`POST /gateway/pii/scan`</h4><p>Scan content for PII.</p>
+<h3 id="business-intelligence-endpoints">Business Intelligence Endpoints</h3><h4 id="get-roi">`GET /roi`</h4><p>Instant ROI report.</p>
+<h4 id="get-mikedashboard">`GET /mike/dashboard`</h4><p>Full operations dashboard.</p>
+<h4 id="get-executivedashboard">`GET /executive/dashboard`</h4><p>Executive overview (combines all dashboards).</p>
+<h4 id="get-decisionsgraph">`GET /decisions/graph`</h4><p>Full decision graph.</p>
+<h4 id="get-decisionsstats">`GET /decisions/stats`</h4><p>Decision analytics and maker rankings.</p>
+<h4 id="get-qbr">`GET /qbr`</h4><p>QBR report for current or specified period.</p>
+<h4 id="post-qbrgenerate">`POST /qbr/generate`</h4><p>Generate QBR with custom parameters.</p>
+<h4 id="get-amnesiadetect">`GET /amnesia/detect`</h4><p>Run amnesia detection.</p>
+<h4 id="post-setup-wizard">`POST /setup-wizard`</h4><p>Guided setup (GET steps or POST answers).</p>
+<h4 id="post-seed">`POST /seed`</h4><p>Seed demo data (requires admin).</p>
+<h3 id="openai-compatible-endpoints">OpenAI-Compatible Endpoints</h3><h4 id="get-v1models">`GET /v1/models`</h4><p>List available models (OpenAI-compatible).</p>
+<h4 id="post-v1chatcompletions">`POST /v1/chat/completions`</h4><p>Chat completions (OpenAI-compatible, proxies to upstream).</p>
+<h3 id="dashboard-endpoints">Dashboard Endpoints</h3><h4 id="get-dashboard">`GET /dashboard`</h4><p>Serve the HTML dashboard.</p>
+<hr>
+<h2 id="12-troubleshooting">12. Troubleshooting</h2><h3 id="server-wont-start">Server Won't Start</h3><p><strong>Problem:</strong> <code>Error: listen EADDRINUSE :::8080</code></p>
+<p><strong>Fix:</strong> Port is already in use. Use a different port:</p>
+<pre><code class="language-bash">PORT=9090 node server.js
+</code></pre>
+<p><strong>Problem:</strong> <code>Error: Cannot find module &#39;better-sqlite3&#39;</code></p>
+<p><strong>Fix:</strong> SQLite is optional. The Grid falls back to JSON file storage automatically. This warning is safe to ignore.</p>
+<h3 id="seed-mode-not-working">Seed Mode Not Working</h3><p><strong>Problem:</strong> Server starts but no seed data appears.</p>
+<p><strong>Fix:</strong> Set the env var explicitly:</p>
+<pre><code class="language-bash">GRID_SEED_MODE=true node server.js
+</code></pre>
+<p>Or if you want to DISABLE auto-seed:</p>
+<pre><code class="language-bash">GRID_SEED_MODE=false node server.js
+</code></pre>
+<h3 id="federation-sync-fails">Federation Sync Fails</h3><p><strong>Problem:</strong> <code>Invalid federation signature</code></p>
+<p><strong>Fix:</strong> </p>
+<ol>
+<li>Verify both peers have the same shared secret configured</li>
+<li>Check that clocks are synchronized (signatures expire after 5 minutes)</li>
+<li>Ensure the peer URL is reachable from your server</li>
+</ol>
+<h3 id="auth-errors-in-production">Auth Errors in Production</h3><p><strong>Problem:</strong> <code>Invalid API key</code></p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li>Create a new key: <code>POST /gateway/key/create</code></li>
+<li>Use it in the <code>Authorization: Bearer &lt;key&gt;</code> header</li>
+<li>Verify the key hasn&#39;t expired</li>
+</ol>
+<p><strong>Problem:</strong> <code>Need admin</code> or <code>Need architect</code></p>
+<p><strong>Fix:</strong> Your API key doesn&#39;t have sufficient permissions. Create a new key with the required permission level.</p>
+<h3 id="constitution-rules-not-blocking">Constitution Rules Not Blocking</h3><p><strong>Problem:</strong> Writes pass even though constitution is in <code>block</code> mode.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li>Verify the constitution was registered for the correct workspace</li>
+<li>Check that <code>X-Grid-Workspace</code> header is sent with write requests</li>
+<li>Constitutions are workspace-scoped — rules in workspace A don&#39;t apply to workspace B</li>
+</ol>
+<h3 id="contracts-not-validating">Contracts Not Validating</h3><p><strong>Problem:</strong> Writes pass even though a contract exists.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li>Contracts match by tag scope — verify your entry tags match the contract scope</li>
+<li>Contract scopes support wildcards: <code>topic:*</code> matches any <code>topic:*</code> tag</li>
+<li>Check enforce mode — <code>validate</code> mode warns but doesn&#39;t block</li>
+</ol>
+<h3 id="rate-limiting">Rate Limiting</h3><p><strong>Problem:</strong> <code>Rate limit exceeded</code></p>
+<p><strong>Fix:</strong> Wait one minute and retry. Rate limits reset every 60 seconds. Reduce request frequency.</p>
+<h3 id="audit-hash-chain-broken">Audit Hash Chain Broken</h3><p><strong>Problem:</strong> <code>/gateway/audit/verify</code> returns <code>valid: false</code></p>
+<p><strong>Fix:</strong> The audit log has been tampered with. Investigate immediately:</p>
+<ol>
+<li>Check which entry index is broken</li>
+<li>Look for unexpected changes to the audit file</li>
+<li>Restore from backup if available</li>
+</ol>
+<hr>
+<h2 id="13-architecture-overview">13. Architecture Overview</h2><pre><code>┌──────────────────────────────────────────────────────────────────────┐
+│                    Grid Memory Server (server.js)                     │
+│                                                                       │
+│  ┌─────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐           │
+│  │ Router  │→│ Gateway  │→│ Workspace│→│ Features  │           │
+│  │ (handle)│  │ (auth)   │  │ (isolation│  │           │           │
+│  └─────────┘  └──────────┘  └──────────┘  └────────────┘           │
+│                                                   ↓                   │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                    Feature Modules                             │   │
+│  │  ┌────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐        │   │
+│  │  │Write/  │ │Contracts │ │Constit-  │ │Federation  │        │   │
+│  │  │Query   │ │(schemas) │ │ution     │ │(peers)     │        │   │
+│  │  └────────┘ │          │ │(policies)│ └────────────┘        │   │
+│  │             └──────────┘ └──────────┘                        │   │
+│  │  ┌────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐        │   │
+│  │  │MIKE    │ │Decision  │ │QBR       │ │Amnesia     │        │   │
+│  │  │Dashboard│ │Graph     │ │Generator │ │Detector    │        │   │
+│  │  └────────┘ └──────────┘ └──────────┘ └────────────┘        │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                   ↓                   │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                    Storage Layer                               │   │
+│  │                       ↓                                        │   │
+│  │            ┌────────────────────┐                              │   │
+│  │            │  reference/store.js│                              │   │
+│  │            │  (append-only JSON)│                              │   │
+│  │            ├────────────────────┤                              │   │
+│  │            │  governance-db.js  │                              │   │
+│  │            │  (SQLite via       │                              │   │
+│  │            │   better-sqlite3)  │                              │   │
+│  │            └────────────────────┘                              │   │
+│  │              ↓                  ↓                               │   │
+│  │     store.json          governance.db                          │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────┐
+│              Python SDK / Client                           │
+│  grid_memory.LocalGrid → HTTP calls to server             │
+│  grid_memory.GridFederation → federation management       │
+└──────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="request-flow">Request Flow</h3><p>Every request to the Grid server flows through this pipeline:</p>
+<pre><code>1. CORS check           → Handle OPTIONS preflight
+2. Gateway endpoints?   → Handle key management, audit, PII scan
+3. Auth check           → (if GRID_ENFORCE_AUTH=true) authenticate + authorize
+4. Route matching       → Match method + URL to handler
+5. Operation            → Execute the feature logic
+6. Audit log            → Log the operation to tamper-evident audit trail
+7. Response             → Return JSON result
+</code></pre>
+<h3 id="data-flow-write">Data Flow: Write</h3><pre><code>Agent → POST /write
+  → Gateway auth (if enabled)
+  → Contract validation (schema check)
+  → Constitution validation (policy check)
+  → Dedup check (if enabled)
+  → Conflict detection (if enabled)
+  → Provenance tracking
+  → Store.append(entry)
+  → Audit.log(&quot;write&quot;, agent_id, entry_id)
+  → Response: { entry_id, created_at, ttl_expires_at }
+</code></pre>
+<h3 id="data-flow-read">Data Flow: Read</h3><pre><code>Agent → GET /query
+  → Gateway auth (if enabled)
+  → Workspace scoping (auto-add ws: tag)
+  → Store.read(tags, agents, type, max, since, before)
+  → Relevance weighting (tag match &gt; type match &gt; recency)
+  → TTL filtering (skip expired entries)
+  → Response: { entries: [...], query_meta: { ... } }
+</code></pre>
+<hr>
+<h2 id="quick-reference-card">Quick Reference Card</h2><pre><code class="language-bash"># ─── Server ───
+node server.js                                    # Start server on :8080
+PORT=9090 node server.js                          # Custom port
+GRID_SEED_MODE=false node server.js               # Disable auto-seed
+GRID_ENFORCE_AUTH=true node server.js             # Enable auth
+
+# ─── Writing ───
+curl -X POST /write -d &#39;{&quot;agent_id&quot;:&quot;a&quot;,&quot;type&quot;:&quot;decision&quot;,&quot;content&quot;:&quot;c&quot;,&quot;tags&quot;:[&quot;t&quot;]}&#39;
+
+# ─── Reading ───
+curl /query?tags=topic:database
+curl /query?agents=arch-agent&amp;type=decision&amp;max=10
+
+# ─── Contracts ───
+curl -X POST /contracts -d &#39;{&quot;scope&quot;:&quot;t:db&quot;,&quot;schema&quot;:{&quot;db&quot;:&quot;string&quot;}}&#39;
+curl /auto-contracts
+curl -X POST /auto-contracts/approve -d &#39;{&quot;scope&quot;:&quot;t:db&quot;,&quot;suggested_schema&quot;:{...}}&#39;
+
+# ─── Constitutions ───
+curl -X POST /constitution/from-text -d &#39;{&quot;text&quot;:&quot;Never store API keys&quot;}&#39;
+curl -X POST /constitution -H &quot;X-Grid-Workspace: default&quot; -d &#39;{&quot;rules&quot;:[...]}&#39;
+
+# ─── Federation ───
+curl -X POST /federation/peers (or /federation/quick-connect) -d &#39;{&quot;peerUrl&quot;:&quot;http://other:8080&quot;}&#39;
+curl -X POST /federation/peers -d &#39;{&quot;url&quot;:&quot;http://other:8080&quot;,&quot;trustLevel&quot;:&quot;verified&quot;,&quot;sharedSecret&quot;:&quot;...&quot;}&#39;
+
+# ─── Business ───
+curl /roi
+curl /mike/dashboard
+curl /executive/dashboard
+curl /decisions/graph
+curl /qbr
+curl /amnesia/detect
+
+# ─── Security ───
+curl -X POST /gateway/key/create -d &#39;{&quot;label&quot;:&quot;admin&quot;,&quot;permission&quot;:&quot;admin&quot;}&#39;
+curl /gateway/audit
+curl /gateway/audit/verify
+</code></pre>
+<hr>
+<h2 id="14-route-authorization">14. Route Authorization</h2><blockquote>
+<p>All endpoints are registered with mandatory permission levels. Auth is structural, not per-endpoint.</p>
+</blockquote>
+<h3 id="mike-intelligence-endpoints-require-analyst">MIKE Intelligence Endpoints (require `analyst`+)</h3><table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Required Permission</th>
+<th>Rate Limit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET /roi</code></td>
+<td>analyst</td>
+<td>30/min</td>
+</tr>
+<tr>
+<td><code>GET /mike/dashboard</code></td>
+<td>analyst</td>
+<td>20/min</td>
+</tr>
+<tr>
+<td><code>GET /executive/dashboard</code></td>
+<td>analyst</td>
+<td>10/min</td>
+</tr>
+<tr>
+<td><code>GET /decisions/graph</code></td>
+<td>analyst</td>
+<td>20/min</td>
+</tr>
+<tr>
+<td><code>GET /decisions/stats</code></td>
+<td>analyst</td>
+<td>20/min</td>
+</tr>
+<tr>
+<td><code>GET /qbr</code></td>
+<td>analyst</td>
+<td>15/min</td>
+</tr>
+<tr>
+<td><code>POST /qbr/generate</code></td>
+<td>analyst</td>
+<td>15/min</td>
+</tr>
+<tr>
+<td><code>GET /amnesia/detect</code></td>
+<td>analyst</td>
+<td>15/min</td>
+</tr>
+<tr>
+<td><code>POST /setup-wizard</code></td>
+<td>admin</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<h3 id="management-endpoints">Management Endpoints</h3><table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Required Permission</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POST /gateway/key/create</code></td>
+<td>admin</td>
+<td>Requires GRID_ENFORCE_AUTH=true</td>
+</tr>
+<tr>
+<td><code>GET /gateway/keys</code></td>
+<td>admin</td>
+<td>Lists all keys (masked)</td>
+</tr>
+<tr>
+<td><code>DELETE /gateway/key/revoke/:id</code></td>
+<td>admin</td>
+<td>Revokes a key</td>
+</tr>
+<tr>
+<td><code>POST /gateway/key/rotate/:id</code></td>
+<td>admin</td>
+<td>Replaces a key</td>
+</tr>
+<tr>
+<td><code>GET /gateway/audit</code></td>
+<td>admin</td>
+<td>Audit log</td>
+</tr>
+<tr>
+<td><code>GET /gateway/audit/verify</code></td>
+<td>admin</td>
+<td>Audit chain integrity</td>
+</tr>
+<tr>
+<td><code>POST /gateway/pii/scan</code></td>
+<td>admin</td>
+<td>PII detection</td>
+</tr>
+</tbody></table>
+<h3 id="permission-levels">Permission Levels</h3><table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Access</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>viewer</code></td>
+<td>Read-only queries, health checks</td>
+</tr>
+<tr>
+<td><code>analyst</code></td>
+<td>Viewer + write entries, dashboards, reports</td>
+</tr>
+<tr>
+<td><code>architect</code></td>
+<td>Analyst + manage contracts, constitutions</td>
+</tr>
+<tr>
+<td><code>executive</code></td>
+<td>Architect + manage keys, audit (gateway routes)</td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td>Everything</td>
+</tr>
+</tbody></table>
+<h3 id="using-auth-headers">Using Auth Headers</h3><pre><code class="language-bash"># With API key
+curl http://localhost:8080/executive/dashboard \
+  -H &quot;Authorization: Bearer grid_a1b2c3d4e5f6...&quot;
+</code></pre>
+<p>The executive dashboard HTML also supports API key auth via the key input field at the top of the page.</p>
+<h3 id="route-registry-architecture">Route Registry Architecture</h3><p>Routes are registered via <code>route-registry.js</code>:</p>
+<pre><code class="language-javascript">const registry = new RouteRegistry();
+registry.register(&#39;GET&#39;, &#39;/roi&#39;, &#39;analyst&#39;, handler);
+</code></pre>
+<p>The <code>handle()</code> function checks the registry first. If a route matches, auth is enforced automatically before the handler runs. This means:</p>
+<ul>
+<li>New endpoints can&#39;t be added without declaring a permission level</li>
+<li>Dead code can&#39;t accumulate (old handlers are visible dead code)</li>
+<li>Auth is applied structurally, not by human memory</li>
+</ul>
+
+
+<h1 id="grid-memory-intelligence-layer-mike">Grid Memory — Intelligence Layer (MIKE)</h1><blockquote>
+<p><strong>Every decision, every risk, every opportunity, every dollar.</strong>
+The Intelligence Layer sits on top of Grid Memory&#39;s core and tells you what to do next, why, and how much money is involved.</p>
+</blockquote>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2><ol>
+<li><a href="#1-what-is-mike">What Is MIKE?</a></li>
+<li><a href="#2-what-business-problems-does-mike-solve">What Business Problems Does MIKE Solve?</a></li>
+<li><a href="#3-what-does-mike-actually-do">What Does MIKE Actually Do?</a></li>
+<li><a href="#4-how-does-mike-work">How Does MIKE Work?</a></li>
+<li><a href="#5-opportunity-engine">Opportunity Engine</a></li>
+<li><a href="#6-client-intelligence">Client Intelligence</a></li>
+<li><a href="#7-assessment-intelligence">Assessment Intelligence</a></li>
+<li><a href="#8-decision-intelligence">Decision Intelligence</a></li>
+<li><a href="#9-qbr-intelligence">QBR Intelligence</a></li>
+<li><a href="#10-revenue-intelligence">Revenue Intelligence</a></li>
+<li><a href="#11-risk-intelligence">Risk Intelligence</a></li>
+<li><a href="#12-organizational-intelligence">Organizational Intelligence</a></li>
+<li><a href="#13-executive-dashboard">Executive Dashboard</a></li>
+<li><a href="#14-ai-governance">AI Governance</a></li>
+<li><a href="#15-roi--business-value">ROI &amp; Business Value</a></li>
+<li><a href="#16-getting-started">Getting Started</a></li>
+</ol>
+<hr>
+<h2 id="1-what-is-mike">1. What Is MIKE?</h2><h3 id="what-is-mike">What is MIKE?</h3><p>MIKE is an <strong>executive intelligence layer</strong> that sits on top of your organization&#39;s memory and surfaces what matters: opportunities, risks, decisions, and their monetary impact.</p>
+<p>Think of MIKE as the operating system for organizational intelligence. It ingests everything your teams and agents decide, observe, and produce — then continuously answers the only question that matters:</p>
+<blockquote>
+<p><em>&quot;What should we do next, why should we do it, how confident are we, what happens if we don&#39;t, and how much money is involved?&quot;</em></p>
+</blockquote>
+<h3 id="what-problem-does-mike-solve">What problem does MIKE solve?</h3><p>Organizations have a <strong>memory problem</strong>. Decisions get made and forgotten. Risks get identified and lost. Opportunities get surfaced and never pursued. When people leave, their knowledge leaves with them. When teams grow, they repeat past mistakes.</p>
+<p>This is not a technology problem. It&#39;s an <strong>organizational amnesia</strong> problem.</p>
+<p>MIKE solves it by making organizational memory active — not a static archive, but a living intelligence layer that continuously surfaces what matters.</p>
+<h3 id="why-was-mike-created">Why was MIKE created?</h3><p>Because the gap between having data and having actionable intelligence is where most organizations fail.</p>
+<p>Every organization has:</p>
+<ul>
+<li><strong>Slack channels</strong> where decisions are buried</li>
+<li><strong>Notion docs</strong> that nobody reads</li>
+<li><strong>Jira tickets</strong> that close without outcomes tracked</li>
+<li><strong>Meetings</strong> where the same problems get re-debated every quarter</li>
+<li><strong>Spreadsheets</strong> that are wrong the moment they&#39;re saved</li>
+</ul>
+<p>MIKE was built to turn this noise into signal — automatically, continuously, and in business terms.</p>
+<h3 id="who-is-mike-for">Who is MIKE for?</h3><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>What MIKE Does For Them</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>CEO</strong></td>
+<td>Answers: &quot;What should I focus on this week?&quot; Shows opportunities, risks, revenue trajectory</td>
+</tr>
+<tr>
+<td><strong>CTO</strong></td>
+<td>Answers: &quot;What are my teams actually deciding? Are we repeating mistakes?&quot; Surfaces decision patterns</td>
+</tr>
+<tr>
+<td><strong>Consulting Partner</strong></td>
+<td>Answers: &quot;What&#39;s happening across my clients? Where are the expansion opportunities?&quot; Generates QBRs automatically</td>
+</tr>
+<tr>
+<td><strong>PE Operator</strong></td>
+<td>Answers: &quot;What&#39;s the real risk in this portfolio company? Where&#39;s the hidden value?&quot; Monitors organizational health</td>
+</tr>
+<tr>
+<td><strong>Fractional Executive</strong></td>
+<td>Answers: &quot;I have 10 clients — what needs my attention right now?&quot; Delivers an executive dashboard for each</td>
+</tr>
+<tr>
+<td><strong>Head of AI</strong></td>
+<td>Answers: &quot;What are my agents doing? Are they aligned? Are they hallucinating?&quot; Provides provenance and audit</td>
+</tr>
+</tbody></table>
+<h3 id="how-is-mike-different-from-chatgpt">How is MIKE different from ChatGPT?</h3><p>ChatGPT is a conversation. You ask, it answers, you forget.</p>
+<p>MIKE is continuous. It watches everything, remembers everything, and surfaces what matters without being asked. ChatGPT has no memory of your business. MIKE is your business&#39;s memory.</p>
+<p>ChatGPT answers questions. MIKE answers: <em>&quot;What should I do next?&quot;</em></p>
+<h3 id="how-is-mike-different-from-copilot">How is MIKE different from Copilot?</h3><p>Copilot is embedded in a tool (code, docs, meetings). It helps you complete tasks within that tool.</p>
+<p>MIKE operates across all your tools. It doesn&#39;t help you write an email — it tells you which email you should be writing, and why it&#39;s worth $200K.</p>
+<h3 id="how-is-mike-different-from-bi-tools">How is MIKE different from BI tools?</h3><p>BI tools (Tableau, Looker, PowerBI) answer questions you already know to ask. You build dashboards. You write queries. You interpret the results.</p>
+<p>MIKE answers questions you didn&#39;t know to ask. It surfaces opportunities you didn&#39;t see. It alerts you to risks you didn&#39;t notice. BI is rear-view mirror. MIKE is the windshield.</p>
+<h3 id="how-is-mike-different-from-consulting-firms">How is MIKE different from consulting firms?</h3><p>Consulting firms (McKinsey, BCG, Deloitte) deliver a point-in-time report. You pay $500K, get a PDF, and six months later it&#39;s outdated.</p>
+<p>MIKE is continuous. It doesn&#39;t deliver a report — it maintains a living intelligence layer that updates every time your team makes a decision. MIKE costs a fraction of a consulting engagement and never stops delivering.</p>
+<h3 id="how-is-mike-different-from-agent-platforms">How is MIKE different from agent platforms?</h3><p>Agent platforms (LangGraph, CrewAI, AutoGen) are frameworks for building agent workflows. They help agents communicate, but they don&#39;t help executives understand what those agents are doing or whether it&#39;s working.</p>
+<p>MIKE sits on top of agent platforms and translates agent activity into business intelligence. It answers: &quot;What did my 47 agents decide today, and how much is it worth?&quot;</p>
+<hr>
+<h2 id="2-what-business-problems-does-mike-solve">2. What Business Problems Does MIKE Solve?</h2><h3 id="how-does-mike-help-increase-revenue">How does MIKE help increase revenue?</h3><p>MIKE identifies opportunities that are hidden in your organization&#39;s daily operations:</p>
+<ul>
+<li><strong>Upsell opportunities</strong> — A client mentions a new pain point. MIKE flags it as an expansion opportunity with estimated value.</li>
+<li><strong>Cross-sell signals</strong> — A service line is solving a problem that another client segment shares. MIKE connects the dots.</li>
+<li><strong>Pipeline gaps</strong> — MIKE tracks win/loss patterns and identifies which stages are leaking revenue.</li>
+<li><strong>Pricing signals</strong> — MIKE detects when competitors are mentioned, when clients push back on price, and when you left money on the table.</li>
+</ul>
+<h3 id="how-does-mike-help-reduce-costs">How does MIKE help reduce costs?</h3><ul>
+<li><strong>Duplicate work</strong> — MIKE detects when two teams solve the same problem independently</li>
+<li><strong>Repeated mistakes</strong> — MIKE tracks decision outcomes and flags when a decision pattern has historically failed</li>
+<li><strong>Onboarding time</strong> — MIKE preserves institutional knowledge, cutting new hire ramp time from months to days</li>
+<li><strong>Meeting bloat</strong> — MIKE surfaces when the same topic is being discussed across multiple forums without resolution</li>
+</ul>
+<h3 id="how-does-mike-reduce-operational-risk">How does MIKE reduce operational risk?</h3><ul>
+<li><strong>Decision tracking</strong> — Every decision is logged with rationale, alternatives, and outcome. No more &quot;who decided that?&quot;</li>
+<li><strong>Amnesia detection</strong> — MIKE alerts when a topic hasn&#39;t been discussed in 30+ days, preventing critical knowledge from going stale</li>
+<li><strong>Blocker visibility</strong> — MIKE surfaces blockers before they become crises by tracking their age and impact</li>
+<li><strong>Contradiction detection</strong> — MIKE flags when two agents or teams make contradictory decisions</li>
+</ul>
+<h3 id="how-does-mike-preserve-institutional-knowledge">How does MIKE preserve institutional knowledge?</h3><p>Every decision, rationale, outcome, and lesson is stored in tamper-evident, append-only memory. When someone leaves:</p>
+<ul>
+<li>Their decisions don&#39;t leave with them</li>
+<li>Their rationale is preserved</li>
+<li>Their lessons are available to successors</li>
+<li>Their network of influence is documented</li>
+</ul>
+<h3 id="how-does-mike-help-during-leadership-turnover">How does MIKE help during leadership turnover?</h3><p>New leaders typically spend 30–90 days just understanding what happened before them. MIKE compresses this to hours:</p>
+<ul>
+<li>Full decision history with rationale and outcomes</li>
+<li>Active risks and opportunities</li>
+<li>Organizational knowledge map (who knows what)</li>
+<li>QBR history showing trajectory</li>
+</ul>
+<h3 id="how-does-mike-help-during-acquisitions">How does MIKE help during acquisitions?</h3><p>Due diligence is exponentially faster with MIKE:</p>
+<ul>
+<li>Full audit trail of every decision</li>
+<li>Risk surface area mapped</li>
+<li>Knowledge concentration identified (single points of failure)</li>
+<li>Cultural patterns surfaced from decision data</li>
+</ul>
+<h3 id="how-does-mike-help-during-ai-transformations">How does MIKE help during AI transformations?</h3><p>As organizations deploy more AI agents, they create a new class of risk: agent decisions without human oversight. MIKE:</p>
+<ul>
+<li>Tracks every agent decision with full provenance</li>
+<li>Detects agent hallucinations and contradictions</li>
+<li>Provides an audit trail that satisfies compliance requirements</li>
+<li>Answers: &quot;What did the AI decide, why, and who verified it?&quot;</li>
+</ul>
+<h3 id="how-does-mike-help-scale-consulting-engagements">How does MIKE help scale consulting engagements?</h3><p>Consulting firms face a fundamental scaling problem: quality degrades as headcount grows because knowledge is in people&#39;s heads. MIKE:</p>
+<ul>
+<li>Preserves engagement knowledge across teams</li>
+<li>Enables junior consultants to operate at senior level with full context</li>
+<li>Automates QBR generation (usually 20+ hours per client)</li>
+<li>Surfaces expansion opportunities that would otherwise be missed</li>
+</ul>
+<h3 id="how-does-mike-identify-hidden-opportunities">How does MIKE identify hidden opportunities?</h3><p>MIKE continuously scans for patterns that humans miss:</p>
+<ul>
+<li>A client mentions a problem in a casual conversation → flagged as an opportunity</li>
+<li>Two teams independently solve the same issue → surfaced as a reusable solution</li>
+<li>A competitor is mentioned across multiple entries → surfaced as competitive intelligence</li>
+<li>A decision pattern with high success rate → recommended as a standard practice</li>
+</ul>
+<hr>
+<h2 id="3-what-does-mike-actually-do">3. What Does MIKE Actually Do?</h2><h3 id="what-are-mikes-capabilities">What are MIKE's capabilities?</h3><table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>What It Does</th>
+<th>Business Impact</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Memory</strong></td>
+<td>Stores every decision, fact, observation permanently</td>
+<td>No knowledge loss</td>
+</tr>
+<tr>
+<td><strong>Decision Graph</strong></td>
+<td>Maps decisions to outcomes to decision-makers</td>
+<td>Better decisions</td>
+</tr>
+<tr>
+<td><strong>Opportunity Engine</strong></td>
+<td>Continuously identifies revenue opportunities</td>
+<td>More revenue</td>
+</tr>
+<tr>
+<td><strong>Risk Detection</strong></td>
+<td>Flags risks before they become crises</td>
+<td>Less risk</td>
+</tr>
+<tr>
+<td><strong>Amnesia Detection</strong></td>
+<td>Alerts when knowledge is going stale</td>
+<td>Knowledge preserved</td>
+</tr>
+<tr>
+<td><strong>QBR Generation</strong></td>
+<td>Generates quarterly business reviews automatically</td>
+<td>Consulting leverage</td>
+</tr>
+<tr>
+<td><strong>Client Intelligence</strong></td>
+<td>Tracks client health, expansion, at-risk signals</td>
+<td>Client retention</td>
+</tr>
+<tr>
+<td><strong>Executive Dashboard</strong></td>
+<td>One-screen view of everything that matters</td>
+<td>Faster decisions</td>
+</tr>
+<tr>
+<td><strong>Organizational Mapping</strong></td>
+<td>Maps who knows what and where knowledge is concentrated</td>
+<td>Succession planning</td>
+</tr>
+</tbody></table>
+<h3 id="what-are-mikes-limitations">What are MIKE's limitations?</h3><ul>
+<li><strong>MIKE can&#39;t read your mind.</strong> If you don&#39;t write it down, MIKE doesn&#39;t know it. The quality of MIKE&#39;s intelligence is proportional to the quality of your team&#39;s writing.</li>
+<li><strong>MIKE can&#39;t predict the future.</strong> MIKE surfaces patterns and probabilities, not certainties. Confidence scores communicate how sure MIKE is.</li>
+<li><strong>MIKE doesn&#39;t replace judgment.</strong> MIKE surfaces what you should consider. Humans still decide.</li>
+</ul>
+<h3 id="what-can-mike-automate">What can MIKE automate?</h3><ul>
+<li><strong>QBR generation</strong> — 20+ hours of manual work reduced to seconds</li>
+<li><strong>Decision audits</strong> — Tracking who decided what, when, and why</li>
+<li><strong>Risk reporting</strong> — Continuous risk surface monitoring</li>
+<li><strong>Opportunity surfacing</strong> — 24/7 scanning for revenue signals</li>
+<li><strong>Knowledge preservation</strong> — Automatic capture of institutional memory</li>
+<li><strong>Onboarding briefings</strong> — Instant context for new team members</li>
+</ul>
+<h3 id="what-decisions-can-mike-support">What decisions can MIKE support?</h3><ul>
+<li><strong>Strategic</strong>: Which opportunities to pursue, which risks to mitigate</li>
+<li><strong>Operational</strong>: Where to allocate resources, which teams need support</li>
+<li><strong>Tactical</strong>: What decisions have historically worked in similar situations</li>
+<li><strong>Investment</strong>: Where to invest based on pattern analysis</li>
+</ul>
+<h3 id="what-decisions-should-humans-still-make">What decisions should humans still make?</h3><ul>
+<li><strong>Values-based decisions</strong>: What aligns with our mission</li>
+<li><strong>High-risk strategic pivots</strong>: Bet-the-company decisions</li>
+<li><strong>People decisions</strong>: Hiring, firing, promoting</li>
+<li><strong>Creative direction</strong>: Brand, messaging, design</li>
+<li><strong>Ethical judgments</strong>: Gray areas that require human values</li>
+</ul>
+<h3 id="how-does-mike-generate-recommendations">How does MIKE generate recommendations?</h3><p>MIKE analyzes historical patterns to generate recommendations:</p>
+<pre><code>Pattern: Decisions with written rationale succeed 73% more often
+→ Recommendation: Require rationale for all decisions
+→ Confidence: High (based on 47 tracked decisions)
+→ Impact: Reduced rework, fewer bad decisions
+</code></pre>
+<h3 id="how-does-mike-generate-opportunities">How does MIKE generate opportunities?</h3><p>MIKE scans for specific signals:</p>
+<ul>
+<li><strong>Pain signals</strong>: Content containing &quot;problem&quot;, &quot;issue&quot;, &quot;blocking&quot;, &quot;urgent&quot;</li>
+<li><strong>Gap signals</strong>: Topics that are discussed but never resolved</li>
+<li><strong>Competitive signals</strong>: Competitor names appearing in context</li>
+<li><strong>Capacity signals</strong>: Teams that are over or under-resourced</li>
+<li><strong>Pattern signals</strong>: Solutions that worked in one context but aren&#39;t applied elsewhere</li>
+</ul>
+<h3 id="how-does-mike-generate-risk-alerts">How does MIKE generate risk alerts?</h3><p>MIKE monitors for deterioration patterns:</p>
+<ul>
+<li><strong>Stale topics</strong>: Not discussed in 30+ days (amnesia)</li>
+<li><strong>Orphaned decisions</strong>: Decisions made without outcome tracking</li>
+<li><strong>Single points of failure</strong>: Knowledge held by only one person</li>
+<li><strong>Contradictions</strong>: Two agents or teams making opposing decisions</li>
+<li><strong>Blocker aging</strong>: Problems that aren&#39;t being resolved</li>
+</ul>
+<hr>
+<h2 id="4-how-does-mike-work">4. How Does MIKE Work?</h2><h3 id="how-does-mike-collect-information">How does MIKE collect information?</h3><p>MIKE collects information through the Grid — a persistent memory layer that agents and humans write to:</p>
+<ul>
+<li><strong>Agent writes</strong>: When subagents complete work, they write decisions, facts, and observations</li>
+<li><strong>API writes</strong>: Integrations push data from Slack, Jira, Notion, email</li>
+<li><strong>Direct writes</strong>: Humans enter decisions and observations directly via the API or CLI</li>
+</ul>
+<h3 id="where-does-mike-get-its-data">Where does MIKE get its data?</h3><table>
+<thead>
+<tr>
+<th>Source</th>
+<th>What MIKE Gets</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agent decisions</td>
+<td>Structured decisions with rationale</td>
+</tr>
+<tr>
+<td>Subagent outputs</td>
+<td>Completed tasks, blockers, observations</td>
+</tr>
+<tr>
+<td>API integrations</td>
+<td>Slack messages, Jira tickets, Notion docs</td>
+</tr>
+<tr>
+<td>Direct user entry</td>
+<td>Strategic decisions, meeting notes</td>
+</tr>
+<tr>
+<td>Federation</td>
+<td>Data from connected Grid instances</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-learn">How does MIKE learn?</h3><p>MIKE learns through <strong>pattern recognition</strong>:</p>
+<ol>
+<li><strong>Observation</strong>: Agents write decisions, facts, outcomes</li>
+<li><strong>Analysis</strong>: MIKE correlates decisions with outcomes</li>
+<li><strong>Pattern detection</strong>: MIKE identifies what produces good outcomes</li>
+<li><strong>Recommendation</strong>: MIKE surfaces patterns as recommendations</li>
+<li><strong>Verification</strong>: Humans confirm or reject recommendations</li>
+</ol>
+<h3 id="how-does-mike-remember">How does MIKE remember?</h3><p>MIKE uses <strong>append-only memory</strong> with tiered retention:</p>
+<ul>
+<li><strong>Working memory</strong> (hours): Active context, high churn</li>
+<li><strong>Project memory</strong> (weeks): Confirmed decisions, validated outcomes</li>
+<li><strong>Organizational memory</strong> (years): Curated knowledge, permanent</li>
+</ul>
+<p>Nothing is overwritten. Everything is timestamped. Every entry has a traceable provenance chain.</p>
+<h3 id="how-does-mike-identify-patterns">How does MIKE identify patterns?</h3><p>MIKE identifies patterns by analyzing:</p>
+<ul>
+<li><strong>Tag correlations</strong>: Which tags co-occur with successful outcomes</li>
+<li><strong>Temporal patterns</strong>: How decisions evolve over time</li>
+<li><strong>Agent patterns</strong>: Which agents produce reliable vs unreliable information</li>
+<li><strong>Decision-outcome mappings</strong>: Which decision patterns lead to which outcomes</li>
+<li><strong>Contradiction detection</strong>: Where information conflicts</li>
+</ul>
+<h3 id="how-does-mike-identify-opportunities">How does MIKE identify opportunities?</h3><p>MIKE&#39;s opportunity engine continuously scans for:</p>
+<ul>
+<li><strong>Revenue signals</strong>: Content mentioning value, budget, investment</li>
+<li><strong>Pain signals</strong>: Content mentioning problems, blockers, issues</li>
+<li><strong>Gap signals</strong>: Topics discussed but never acted upon</li>
+<li><strong>Pattern signals</strong>: Solutions working in one area that could apply elsewhere</li>
+</ul>
+<p>Each opportunity is scored on:</p>
+<ul>
+<li><strong>Estimated value</strong>: Dollar amount based on similar past opportunities</li>
+<li><strong>Confidence</strong>: How sure MIKE is this is a real opportunity</li>
+<li><strong>Effort</strong>: Estimated time/resources required</li>
+<li><strong>ROI</strong>: Projected return on investment</li>
+</ul>
+<h3 id="how-does-mike-identify-risks">How does MIKE identify risks?</h3><p>MIKE detects five categories of risk:</p>
+<ol>
+<li><strong>Amnesia risk</strong>: Topics not discussed in 30+ days</li>
+<li><strong>Orphan risk</strong>: Decisions made but never acted upon  </li>
+<li><strong>Concentration risk</strong>: Knowledge held by single individuals</li>
+<li><strong>Contradiction risk</strong>: Conflicting decisions across the organization</li>
+<li><strong>Stale decision risk</strong>: Decisions older than 60 days without review</li>
+</ol>
+<h3 id="how-does-mike-generate-executive-insights">How does MIKE generate executive insights?</h3><p>MIKE consolidates everything into an executive dashboard that answers:</p>
+<ul>
+<li><strong>Opportunities</strong>: What should we pursue? (ranked by value × confidence)</li>
+<li><strong>Risks</strong>: What should we worry about? (ranked by severity × probability)</li>
+<li><strong>Decisions</strong>: What did we decide? (with rationale and outcomes)</li>
+<li><strong>Revenue</strong>: How are we tracking? (pipeline, wins, losses, accuracy)</li>
+<li><strong>Health</strong>: How is the organization doing? (amnesia score, SPOF count)</li>
+</ul>
+<h3 id="how-does-mike-avoid-hallucinations">How does MIKE avoid hallucinations?</h3><p>MIKE doesn&#39;t generate content from a model — it <strong>derives insights from stored data</strong>:</p>
+<ul>
+<li>Every recommendation is grounded in actual entries</li>
+<li>Every opportunity is backed by supporting evidence</li>
+<li>Confidence scores communicate certainty level</li>
+<li>All insights are traceable to source entries</li>
+</ul>
+<h3 id="how-does-mike-validate-recommendations">How does MIKE validate recommendations?</h3><p>Recommendations are validated through:</p>
+<ol>
+<li><strong>Evidence count</strong>: How many entries support this pattern</li>
+<li><strong>Outcome correlation</strong>: What percentage of similar patterns produced good outcomes</li>
+<li><strong>Temporal recency</strong>: How recent is the supporting data</li>
+<li><strong>Agent reputation</strong>: How reliable are the agents that provided the data</li>
+</ol>
+<hr>
+<h2 id="5-opportunity-engine">5. Opportunity Engine</h2><blockquote>
+<p>This is one of MIKE&#39;s most valuable capabilities. The Opportunity Engine turns passive data into active revenue.</p>
+</blockquote>
+<h3 id="what-is-an-opportunity">What is an opportunity?</h3><p>An opportunity is a <strong>revenue-generating action</strong> that MIKE identifies from your organization&#39;s daily operations. Opportunities range from upsells to new service lines to strategic pivots.</p>
+<h3 id="how-does-mike-identify-opportunities">How does MIKE identify opportunities?</h3><p>MIKE continuously scans for four types of signals:</p>
+<table>
+<thead>
+<tr>
+<th>Signal Type</th>
+<th>What MIKE Looks For</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Pain</strong></td>
+<td>Words like &quot;problem&quot;, &quot;issue&quot;, &quot;blocking&quot;, &quot;urgent&quot;, &quot;frustrated&quot;</td>
+<td>Client mentions migration is too slow</td>
+</tr>
+<tr>
+<td><strong>Gap</strong></td>
+<td>Topics discussed but never resolved or acted upon</td>
+<td>&quot;We should explore AI for customer support&quot; — said 3 times, never done</td>
+</tr>
+<tr>
+<td><strong>Pattern</strong></td>
+<td>Solutions working in one area that could apply elsewhere</td>
+<td>DevOps automation that worked for team A, not yet applied to team B</td>
+</tr>
+<tr>
+<td><strong>Competitive</strong></td>
+<td>Competitor names and market movements</td>
+<td>&quot;Acme just launched feature X&quot; — flagged for competitive response</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-score-opportunities">How does MIKE score opportunities?</h3><p>Each opportunity gets a priority score based on:</p>
+<pre><code>priority = estimated_value × (confidence × stage_weight) / effort
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Weight</th>
+<th>How It&#39;s Determined</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Estimated value</td>
+<td>0–$1M+</td>
+<td>Based on similar past opportunities and revenue outcomes</td>
+</tr>
+<tr>
+<td>Confidence</td>
+<td>0–100%</td>
+<td>Based on signal strength, evidence count, and pattern match</td>
+</tr>
+<tr>
+<td>Stage weight</td>
+<td>0.3–0.9</td>
+<td>detected=0.3, reviewed=0.5, accepted=0.7, proposed=0.9</td>
+</tr>
+<tr>
+<td>Effort</td>
+<td>hours</td>
+<td>Estimated from similar projects in organizational memory</td>
+</tr>
+</tbody></table>
+<h3 id="what-evidence-supports-an-opportunity">What evidence supports an opportunity?</h3><p>Every opportunity is backed by the actual entries that triggered it:</p>
+<ul>
+<li>The Slack message where the client mentioned the problem</li>
+<li>The decision where the team explored the solution</li>
+<li>The outcome showing the financial impact</li>
+<li>The market research supporting the approach</li>
+</ul>
+<h3 id="how-does-mike-estimate-value">How does MIKE estimate value?</h3><p>MIKE estimates value by:</p>
+<ol>
+<li>Finding similar past opportunities in organizational memory</li>
+<li>Extracting their actual revenue outcomes</li>
+<li>Adjusting for context differences (client size, scope, geography)</li>
+<li>Applying a confidence multiplier based on evidence quality</li>
+</ol>
+<h3 id="how-does-mike-estimate-effort">How does MIKE estimate effort?</h3><p>MIKE estimates effort by:</p>
+<ol>
+<li>Finding similar completed projects in memory</li>
+<li>Extracting actual hours and resources used</li>
+<li>Adjusting for team composition and experience</li>
+<li>Surfacing the range (best case / expected / worst case)</li>
+</ol>
+<h3 id="how-does-mike-estimate-roi">How does MIKE estimate ROI?</h3><pre><code>ROI = (estimated_value × confidence) / (effort_cost × risk_factor)
+</code></pre>
+<p>MIKE surfaces both the raw ROI number and the confidence range, so you know not just the answer but how reliable the answer is.</p>
+<h3 id="how-does-mike-estimate-confidence">How does MIKE estimate confidence?</h3><p>Confidence is a composite score:</p>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Weight</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Evidence count</td>
+<td>30%</td>
+<td>How many entries support this opportunity</td>
+</tr>
+<tr>
+<td>Pattern strength</td>
+<td>25%</td>
+<td>How closely this matches past successful patterns</td>
+</tr>
+<tr>
+<td>Temporal recency</td>
+<td>20%</td>
+<td>How recent the supporting data is</td>
+</tr>
+<tr>
+<td>Agent reputation</td>
+<td>15%</td>
+<td>Reliability of the agents that surfaced signals</td>
+</tr>
+<tr>
+<td>Outcome correlation</td>
+<td>10%</td>
+<td>Historical accuracy of similar opportunities</td>
+</tr>
+</tbody></table>
+<h3 id="how-do-i-approve-opportunities">How do I approve opportunities?</h3><pre><code class="language-bash">curl -X POST /auto-contracts/approve \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{&quot;scope&quot;: &quot;upsell:client-acme&quot;, &quot;suggested_schema&quot;: { ... }}&#39;
+</code></pre>
+<p>Approved opportunities automatically:</p>
+<ol>
+<li>Register as active projects</li>
+<li>Appear on the executive dashboard</li>
+<li>Link to supporting evidence</li>
+<li>Track progress toward outcome</li>
+</ol>
+<h3 id="how-do-i-reject-opportunities">How do I reject opportunities?</h3><pre><code class="language-bash">curl -X POST /auto-contracts/reject \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{&quot;scope&quot;: &quot;opportunity:low-value-signal&quot;}&#39;
+</code></pre>
+<p>Rejected opportunities:</p>
+<ol>
+<li>Won&#39;t be suggested again</li>
+<li>Are logged for pattern analysis</li>
+<li>Help MIKE learn what&#39;s not valuable</li>
+</ol>
+<h3 id="how-do-i-convert-an-opportunity-into-a-project">How do I convert an opportunity into a project?</h3><p>When you decide to pursue an opportunity:</p>
+<ol>
+<li>Approve it (see above)</li>
+<li>MIKE auto-generates a project structure</li>
+<li>MIKE links the project to the opportunity&#39;s supporting evidence</li>
+<li>MIKE tracks the outcome and compares it to the estimate (accuracy tracking)</li>
+</ol>
+<p>This creates a closed loop: <strong>signal → opportunity → project → outcome → learning → better signal detection.</strong></p>
+<hr>
+<h2 id="6-client-intelligence">6. Client Intelligence</h2><blockquote>
+<p>For consulting firms and client-serving organizations, Client Intelligence is the difference between being a vendor and being a strategic partner.</p>
+</blockquote>
+<h3 id="how-does-mike-model-clients">How does MIKE model clients?</h3><p>Each client is modeled as a workspace within MIKE. The workspace contains:</p>
+<ul>
+<li>All decisions made for/by the client</li>
+<li>All outcomes (won/lost, revenue, satisfaction)</li>
+<li>All observations about the client&#39;s business</li>
+<li>All opportunities identified and their status</li>
+<li>All contracts, assessments, and deliverables</li>
+</ul>
+<h3 id="what-information-is-stored-about-clients">What information is stored about clients?</h3><table>
+<thead>
+<tr>
+<th>Category</th>
+<th>What&#39;s Stored</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Demographics</strong></td>
+<td>Industry, size, geography, decision-makers</td>
+</tr>
+<tr>
+<td><strong>Engagement history</strong></td>
+<td>Projects, outcomes, revenue, satisfaction</td>
+</tr>
+<tr>
+<td><strong>Pain points</strong></td>
+<td>Identified problems and their severity</td>
+</tr>
+<tr>
+<td><strong>Opportunities</strong></td>
+<td>Every identified up-sell, cross-sell, expansion</td>
+</tr>
+<tr>
+<td><strong>Risks</strong></td>
+<td>At-risk signals, churn indicators</td>
+</tr>
+<tr>
+<td><strong>Decisions</strong></td>
+<td>Key client decisions and their rationale</td>
+</tr>
+<tr>
+<td><strong>Competitive landscape</strong></td>
+<td>Competitors mentioned, lost deals</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-identify-expansion-opportunities">How does MIKE identify expansion opportunities?</h3><p>MIKE scans for:</p>
+<ul>
+<li><strong>New pain points</strong>: Client mentions a problem MIKE has solved for other clients</li>
+<li><strong>Service gaps</strong>: Client has needs that aren&#39;t being met by current engagement</li>
+<li><strong>Scale signals</strong>: Client is growing in areas MIKE can support</li>
+<li><strong>Referral patterns</strong>: Client expresses satisfaction that could lead to referrals</li>
+</ul>
+<h3 id="how-does-mike-identify-at-risk-clients">How does MIKE identify at-risk clients?</h3><p>MIKE detects:</p>
+<ul>
+<li><strong>Silence</strong>: No recent engagement activity (potential churn)</li>
+<li><strong>Negative sentiment</strong>: Words like &quot;expensive&quot;, &quot;considering other options&quot;</li>
+<li><strong>Competitor mentions</strong>: Client evaluating competitors</li>
+<li><strong>Complaint frequency</strong>: Increased issue reporting</li>
+<li><strong>Decision stall</strong>: Key decisions being delayed</li>
+</ul>
+<h3 id="how-does-mike-identify-upsell-opportunities">How does MIKE identify upsell opportunities?</h3><p>MIKE identifies upsells by:</p>
+<ol>
+<li>Analyzing current engagement scope</li>
+<li>Identifying adjacent services that solve related problems</li>
+<li>Checking if similar clients have purchased those services</li>
+<li>Surfacing the expansion value</li>
+</ol>
+<h3 id="how-does-mike-recommend-next-engagements">How does MIKE recommend next engagements?</h3><p>MIKE considers:</p>
+<ul>
+<li>What worked for similar clients</li>
+<li>Current client pain points</li>
+<li>Seasonal/cyclical patterns</li>
+<li>Client budget cycles</li>
+<li>Team availability and expertise</li>
+</ul>
+<h3 id="how-does-mike-estimate-client-lifetime-value">How does MIKE estimate client lifetime value?</h3><pre><code>CLV = average_engagement_value × (1 - churn_probability) × expected_years
+</code></pre>
+<p>MIKE continuously updates CLV based on real engagement data.</p>
+<h3 id="how-does-mike-track-client-outcomes">How does MIKE track client outcomes?</h3><p>Every client engagement has:</p>
+<ul>
+<li><strong>Proposed outcome</strong>: What was promised</li>
+<li><strong>Actual outcome</strong>: What was delivered</li>
+<li><strong>Variance analysis</strong>: Why they differed</li>
+<li><strong>Lessons learned</strong>: What to repeat or avoid</li>
+</ul>
+<hr>
+<h2 id="7-assessment-intelligence">7. Assessment Intelligence</h2><blockquote>
+<p>Assessments are how consulting firms sell work. MIKE makes them faster, more accurate, and more profitable.</p>
+</blockquote>
+<h3 id="what-is-an-assessment">What is an assessment?</h3><p>An assessment is a systematic evaluation of a client&#39;s current state across one or more dimensions: technology, operations, strategy, security, AI readiness, etc.</p>
+<h3 id="how-does-mike-conduct-assessments">How does MIKE conduct assessments?</h3><p>MIKE conducts assessments by:</p>
+<ol>
+<li>Scanning all available data about the client</li>
+<li>Analyzing against best practices stored in organizational memory</li>
+<li>Identifying gaps between current and desired states</li>
+<li>Prioritizing gaps by business impact</li>
+<li>Generating recommendations with estimated ROI</li>
+</ol>
+<h3 id="how-does-mike-score-assessments">How does MIKE score assessments?</h3><p>Each dimension of an assessment gets a score (1–10):</p>
+<table>
+<thead>
+<tr>
+<th>Score</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1–3</td>
+<td>Critical gaps — immediate action required</td>
+</tr>
+<tr>
+<td>4–5</td>
+<td>Significant gaps — action needed this quarter</td>
+</tr>
+<tr>
+<td>6–7</td>
+<td>Minor gaps — improvement opportunities</td>
+</tr>
+<tr>
+<td>8–9</td>
+<td>Good — minor optimization</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Best-in-class</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-identify-pain-points">How does MIKE identify pain points?</h3><p>MIKE identifies pain points by:</p>
+<ol>
+<li>Scanning client entries for problem language</li>
+<li>Cross-referencing with known patterns from similar organizations</li>
+<li>Analyzing the frequency and severity of each pain signal</li>
+<li>Ranking by business impact</li>
+</ol>
+<h3 id="how-does-mike-identify-inefficiencies">How does MIKE identify inefficiencies?</h3><p>MIKE identifies inefficiencies by:</p>
+<ol>
+<li>Comparing current state against best practices</li>
+<li>Analyzing decision patterns for rework indicators</li>
+<li>Detecting redundant work across teams</li>
+<li>Surfacing bottlenecks in decision flow</li>
+</ol>
+<h3 id="how-does-mike-identify-automation-opportunities">How does MIKE identify automation opportunities?</h3><p>MIKE looks for:</p>
+<ul>
+<li><strong>Repetitive decisions</strong>: Same decision being made repeatedly</li>
+<li><strong>Manual processes</strong>: Decisions that don&#39;t require human judgment</li>
+<li><strong>High-volume, low-variance work</strong>: Predictable patterns</li>
+<li><strong>Integration gaps</strong>: Systems that should be connected but aren&#39;t</li>
+</ul>
+<h3 id="how-does-mike-identify-ai-opportunities">How does MIKE identify AI opportunities?</h3><p>MIKE identifies AI opportunities by:</p>
+<ol>
+<li>Analyzing content for mentions of AI-relevant problems</li>
+<li>Cross-referencing with known AI solutions</li>
+<li>Estimating data availability and readiness</li>
+<li>Surfacing quick wins (high impact, low complexity)</li>
+</ol>
+<h3 id="how-does-mike-produce-recommendations">How does MIKE produce recommendations?</h3><p>Each recommendation includes:</p>
+<ul>
+<li><strong>What to do</strong>: The specific action</li>
+<li><strong>Why</strong>: Supporting evidence and rationale</li>
+<li><strong>How much</strong>: Cost and effort estimate</li>
+<li><strong>ROI</strong>: Projected return</li>
+<li><strong>Confidence</strong>: How sure MIKE is</li>
+<li><strong>Risk factors</strong>: What could go wrong</li>
+<li><strong>Alternatives</strong>: Other approaches to consider</li>
+</ul>
+<h3 id="how-does-mike-prioritize-recommendations">How does MIKE prioritize recommendations?</h3><pre><code>priority = (business_impact × confidence) / (effort × risk)
+</code></pre>
+<p>MIKE sorts all recommendations by priority score, ensuring the highest-value, lowest-effort, lowest-risk items surface first.</p>
+<hr>
+<h2 id="8-decision-intelligence">8. Decision Intelligence</h2><blockquote>
+<p>This is one of MIKE&#39;s biggest differentiators. Most organizations have no idea which of their decisions are good or bad. MIKE tracks every decision, measures every outcome, and learns from every result.</p>
+</blockquote>
+<h3 id="what-is-a-decision">What is a decision?</h3><p>A decision is a <strong>structured choice</strong> with:</p>
+<ul>
+<li><strong>Who</strong> made it</li>
+<li><strong>What</strong> they decided</li>
+<li><strong>Why</strong> (rationale)</li>
+<li><strong>When</strong></li>
+<li><strong>Alternatives considered</strong></li>
+<li><strong>Expected outcome</strong></li>
+</ul>
+<h3 id="how-does-mike-track-decisions">How does MIKE track decisions?</h3><p>Every call to <code>POST /write</code> with <code>type: &quot;decision&quot;</code> is tracked as a decision. MIKE builds a <strong>Decision Graph</strong> — a map of every decision, its rationale, and its relationship to other decisions.</p>
+<pre><code class="language-bash">curl -X POST /write \
+  -d &#39;{&quot;agent_id&quot;: &quot;cto&quot;, &quot;type&quot;: &quot;decision&quot;,
+       &quot;content&quot;: &quot;Migrate to PostgreSQL. Rationale: ACID compliance, team expertise.&quot;,
+       &quot;tags&quot;: [&quot;topic:database&quot;, &quot;project:infra&quot;]}&#39;
+</code></pre>
+<h3 id="how-does-mike-track-decision-outcomes">How does MIKE track decision outcomes?</h3><p>Decisions can have outcomes attached via <code>PATCH /entries/:id/outcome</code>:</p>
+<pre><code class="language-bash">curl -X PATCH /entries/grid_123/outcome \
+  -d &#39;{&quot;outcome&quot;: &quot;success&quot;, &quot;delta&quot;: &quot;40% latency reduction&quot;}&#39;
+</code></pre>
+<h3 id="how-does-mike-identify-good-decisions">How does MIKE identify good decisions?</h3><p>MIKE identifies good decisions by:</p>
+<ol>
+<li>Tracking outcome correlations</li>
+<li>Analyzing which decision-makers have the highest success rates</li>
+<li>Identifying which decision patterns produce consistent results</li>
+<li>Surfacing the factors that correlate with success (e.g., decisions with written rationale succeed 73% more often)</li>
+</ol>
+<h3 id="how-does-mike-identify-bad-decisions">How does MIKE identify bad decisions?</h3><p>MIKE identifies bad decisions by:</p>
+<ol>
+<li>Tracking decisions that lack outcomes (orphans)</li>
+<li>Analyzing decisions with negative outcomes</li>
+<li>Detecting decisions that were later reversed</li>
+<li>Surfacing decisions that contradicted successful patterns</li>
+</ol>
+<h3 id="how-does-mike-identify-recurring-decision-patterns">How does MIKE identify recurring decision patterns?</h3><p>MIKE analyzes decisions by:</p>
+<ul>
+<li><strong>Topic clustering</strong>: Which topics are being decided on</li>
+<li><strong>Agent grouping</strong>: Who&#39;s making decisions on which topics</li>
+<li><strong>Temporal patterns</strong>: How decisions evolve over time</li>
+<li><strong>Outcome correlation</strong>: What patterns produce what results</li>
+</ul>
+<h3 id="how-does-mike-help-prevent-repeated-mistakes">How does MIKE help prevent repeated mistakes?</h3><p>MIKE&#39;s <strong>amnesia detector</strong> surfaces:</p>
+<ul>
+<li><strong>Orphaned decisions</strong>: Made but never tracked to outcome</li>
+<li><strong>Contradictory decisions</strong>: Two decisions pointing in opposite directions</li>
+<li><strong>Stale decisions</strong>: Older than 60 days without review</li>
+<li><strong>Single points of failure</strong>: Critical knowledge held by one person</li>
+</ul>
+<h3 id="how-does-mike-build-organizational-memory">How does MIKE build organizational memory?</h3><p>MIKE doesn&#39;t just store decisions — it builds a living graph:</p>
+<pre><code>Decision A (May 1)
+  → Outcome: Success (May 15)
+  → Lesson: &quot;Always include rationale&quot;
+  → Applied to: Decision B (June 1)
+    → Outcome: Success (June 10)
+    → Pattern: &quot;Rationale-driven decisions succeed 73% more often&quot;
+</code></pre>
+<p>This graph becomes your organization&#39;s <strong>institutional memory</strong> — accessible to anyone, at any time, regardless of who&#39;s still at the company.</p>
+<hr>
+<h2 id="9-qbr-intelligence">9. QBR Intelligence</h2><blockquote>
+<p>This is what consulting clients pay for. MIKE generates QBRs automatically — 20+ hours of manual work reduced to seconds.</p>
+</blockquote>
+<h3 id="what-is-a-qbr">What is a QBR?</h3><p>A <strong>Quarterly Business Review</strong> is a structured report that summarizes what happened, what was achieved, what went wrong, and what should happen next. In consulting, QBRs are the primary mechanism for demonstrating value and justifying continued investment.</p>
+<h3 id="how-does-mike-generate-qbrs">How does MIKE generate QBRs?</h3><pre><code class="language-bash">curl http://localhost:8080/qbr?period=Q1-2026
+</code></pre>
+<p>MIKE generates QBRs by:</p>
+<ol>
+<li>Analyzing all entries from the period</li>
+<li>Identifying wins, risks, decisions, and outcomes</li>
+<li>Extracting KPIs and trends</li>
+<li>Generating insights and recommendations</li>
+<li>Producing a structured report</li>
+</ol>
+<h3 id="what-information-is-included">What information is included?</h3><table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Executive Summary</strong></td>
+<td>One-page overview of the quarter</td>
+</tr>
+<tr>
+<td><strong>KPIs</strong></td>
+<td>Decisions made, outcomes tracked, win rate, revenue</td>
+</tr>
+<tr>
+<td><strong>Strategic Decisions</strong></td>
+<td>Key decisions and their rationale</td>
+</tr>
+<tr>
+<td><strong>Opportunity Pipeline</strong></td>
+<td>Detected → Reviewed → Accepted → Won/Lost</td>
+</tr>
+<tr>
+<td><strong>Risks &amp; Contradictions</strong></td>
+<td>What could go wrong</td>
+</tr>
+<tr>
+<td><strong>Decision Patterns</strong></td>
+<td>What&#39;s working and what&#39;s not</td>
+</tr>
+<tr>
+<td><strong>Amnesia Scan</strong></td>
+<td>Knowledge gaps detected</td>
+</tr>
+<tr>
+<td><strong>Recommendations</strong></td>
+<td>What to do next quarter</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-identify-wins">How does MIKE identify wins?</h3><p>MIKE identifies wins by:</p>
+<ol>
+<li>Scanning for content containing &quot;success&quot;, &quot;won&quot;, &quot;completed&quot;, &quot;achieved&quot;</li>
+<li>Tracking decision outcomes marked as &quot;success&quot;</li>
+<li>Analyzing revenue entries with positive outcomes</li>
+<li>Quantifying the impact (reduced latency, increased efficiency, revenue generated)</li>
+</ol>
+<h3 id="how-does-mike-identify-risks">How does MIKE identify risks?</h3><p>MIKE identifies risks by scanning for:</p>
+<ul>
+<li><strong>Stale topics</strong>: Not discussed in 30+ days</li>
+<li><strong>Orphan decisions</strong>: No outcome tracked</li>
+<li><strong>Single points of failure</strong>: Knowledge held by one person</li>
+<li><strong>Contradictions</strong>: Conflicting decisions</li>
+<li><strong>Blocker accumulation</strong>: Unresolved issues</li>
+</ul>
+<h3 id="how-does-mike-identify-missed-opportunities">How does MIKE identify missed opportunities?</h3><p>MIKE identifies missed opportunities by:</p>
+<ol>
+<li>Analyzing opportunities that were detected but never pursued</li>
+<li>Comparing win/loss patterns to industry benchmarks</li>
+<li>Surfacing abandoned initiatives</li>
+<li>Identifying topics that were hot but went cold</li>
+</ol>
+<h3 id="how-does-mike-identify-next-quarter-priorities">How does MIKE identify next-quarter priorities?</h3><p>MIKE surfaces:</p>
+<ul>
+<li><strong>Unresolved blockers</strong> that need attention</li>
+<li><strong>Hot opportunities</strong> that should be pursued</li>
+<li><strong>Stale knowledge</strong> that needs refreshing</li>
+<li><strong>Risk trends</strong> that need monitoring</li>
+</ul>
+<h3 id="how-does-mike-identify-strategic-recommendations">How does MIKE identify strategic recommendations?</h3><p>Each recommendation includes:</p>
+<ul>
+<li><strong>What</strong>: The specific action</li>
+<li><strong>Why</strong>: Supporting evidence from the quarter&#39;s data</li>
+<li><strong>Impact</strong>: Projected business impact</li>
+<li><strong>Confidence</strong>: How sure MIKE is</li>
+<li><strong>Supporting entries</strong>: Links to the evidence</li>
+</ul>
+<hr>
+<h2 id="10-revenue-intelligence">10. Revenue Intelligence</h2><blockquote>
+<p>MIKE turns every interaction into a revenue signal.</p>
+</blockquote>
+<h3 id="how-does-mike-identify-revenue-opportunities">How does MIKE identify revenue opportunities?</h3><p>MIKE scans for:</p>
+<ul>
+<li><strong>Budget signals</strong>: Clients mentioning budget, investment, spend</li>
+<li><strong>Pain signals</strong>: Problems that MIKE has a solution for</li>
+<li><strong>Growth signals</strong>: Client expansion that creates new needs</li>
+<li><strong>Urgency signals</strong>: Time-sensitive needs (&quot;need by Q3&quot;, &quot;migration deadline&quot;)</li>
+</ul>
+<h3 id="how-does-mike-identify-revenue-leakage">How does MIKE identify revenue leakage?</h3><p>MIKE detects:</p>
+<ul>
+<li><strong>Scope creep</strong>: Work delivered beyond scope without change orders</li>
+<li><strong>Delayed billing</strong>: Services delivered but not invoiced</li>
+<li><strong>Underbilled engagements</strong>: Actual hours exceeding estimates</li>
+<li><strong>Expired proposals</strong>: Opportunities that stalled without resolution</li>
+</ul>
+<h3 id="how-does-mike-estimate-opportunity-value">How does MIKE estimate opportunity value?</h3><p>MIKE estimates value by:</p>
+<ol>
+<li>Extracting dollar amounts from content (e.g., &quot;saving $50K/month&quot;)</li>
+<li>Cross-referencing with similar past opportunities</li>
+<li>Applying industry benchmarks</li>
+<li>Adjusting for scope and context</li>
+</ol>
+<h3 id="how-does-mike-identify-cross-sell-opportunities">How does MIKE identify cross-sell opportunities?</h3><p>MIKE identifies cross-sells by:</p>
+<ol>
+<li>Analyzing current client service usage</li>
+<li>Identifying adjacent services that solve related problems</li>
+<li>Checking if similar clients have purchased those services</li>
+<li>Surfacing the expansion value with confidence score</li>
+</ol>
+<h3 id="how-does-mike-identify-upsell-opportunities">How does MIKE identify upsell opportunities?</h3><p>MIKE identifies upsells by:</p>
+<ol>
+<li>Tracking client growth and new pain points</li>
+<li>Analyzing service consumption patterns</li>
+<li>Detecting when clients outgrow current engagement</li>
+<li>Surfacing premium service options</li>
+</ol>
+<h3 id="how-does-mike-identify-service-expansion-opportunities">How does MIKE identify service expansion opportunities?</h3><p>MIKE identifies expansion opportunities by:</p>
+<ol>
+<li>Analyzing client feedback for unmet needs</li>
+<li>Detecting competitor offerings that clients mention</li>
+<li>Surfacing industry trends relevant to the client</li>
+<li>Identifying adjacent problem spaces</li>
+</ol>
+<h3 id="how-does-mike-forecast-pipeline-value">How does MIKE forecast pipeline value?</h3><p>MIKE forecasts pipeline value by:</p>
+<pre><code>forecast_value = sum(opportunity_value × win_probability for all open opportunities)
+</code></pre>
+<p>Win probability is derived from:</p>
+<ul>
+<li>Historical win rates at similar stages</li>
+<li>Decision maker engagement level</li>
+<li>Competitive presence</li>
+<li>Deal age</li>
+</ul>
+<hr>
+<h2 id="11-risk-intelligence">11. Risk Intelligence</h2><blockquote>
+<p>MIKE turns passive data into active risk detection. Most organizations discover risks when they become crises. MIKE surfaces them weeks or months earlier.</p>
+</blockquote>
+<h3 id="how-does-mike-identify-risks">How does MIKE identify risks?</h3><p>MIKE continuously scans for five categories of organizational risk:</p>
+<h3 id="what-types-of-risks-can-mike-detect">What types of risks can MIKE detect?</h3><table>
+<thead>
+<tr>
+<th>Risk Type</th>
+<th>What MIKE Monitors</th>
+<th>Alert Trigger</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Amnesia</strong></td>
+<td>Topics not discussed recently</td>
+<td>30+ days since last mention</td>
+</tr>
+<tr>
+<td><strong>Orphan</strong></td>
+<td>Decisions without outcomes</td>
+<td>14+ days since decision made</td>
+</tr>
+<tr>
+<td><strong>Stale</strong></td>
+<td>Decisions without review</td>
+<td>60+ days since last update</td>
+</tr>
+<tr>
+<td><strong>SPOF</strong></td>
+<td>Single-person knowledge</td>
+<td>Topic known by only one agent</td>
+</tr>
+<tr>
+<td><strong>Contradiction</strong></td>
+<td>Conflicting information</td>
+<td>Two agents saying opposite things</td>
+</tr>
+</tbody></table>
+<h3 id="how-are-risks-scored">How are risks scored?</h3><pre><code>risk_score = severity × probability × imminence
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Range</th>
+<th>How It&#39;s Determined</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Severity</strong></td>
+<td>0–10</td>
+<td>Business impact if risk materializes</td>
+</tr>
+<tr>
+<td><strong>Probability</strong></td>
+<td>0–1</td>
+<td>Likelihood based on pattern analysis</td>
+</tr>
+<tr>
+<td><strong>Imminence</strong></td>
+<td>0–1</td>
+<td>How soon it could materialize</td>
+</tr>
+</tbody></table>
+<h3 id="how-are-risks-prioritized">How are risks prioritized?</h3><p>Risks are sorted by risk_score and grouped into:</p>
+<ul>
+<li><strong>Critical</strong> (score 7+): Immediate attention required</li>
+<li><strong>High</strong> (score 5–7): Action needed this week</li>
+<li><strong>Medium</strong> (score 3–5): Monitor and plan</li>
+<li><strong>Low</strong> (score &lt;3): Track but no action needed</li>
+</ul>
+<h3 id="how-are-risks-escalated">How are risks escalated?</h3><p>Critical risks appear on the executive dashboard with:</p>
+<ul>
+<li>The specific risk</li>
+<li>Supporting evidence</li>
+<li>Recommended mitigation</li>
+<li>Owner assignment</li>
+</ul>
+<h3 id="how-does-mike-detect-project-failure-patterns">How does MIKE detect project failure patterns?</h3><p>MIKE detects patterns that historically preceded failures:</p>
+<ul>
+<li><strong>Silence</strong>: No updates for extended periods (hidden problems)</li>
+<li><strong>Blocker accumulation</strong>: Problems not being resolved</li>
+<li><strong>Scope creep</strong>: Uncontrolled expansion of scope</li>
+<li><strong>Decision reversal</strong>: Key decisions being revisited</li>
+<li><strong>Resource depletion</strong>: Team members being pulled off</li>
+</ul>
+<h3 id="how-does-mike-detect-organizational-amnesia">How does MIKE detect organizational amnesia?</h3><p>MIKE&#39;s amnesia detector runs continuously:</p>
+<pre><code class="language-bash">curl http://localhost:8080/amnesia/detect
+</code></pre>
+<p>It returns:</p>
+<pre><code class="language-json">{
+  &quot;gaps&quot;: [
+    {&quot;topic&quot;: &quot;database migration&quot;, &quot;last_referenced&quot;: &quot;2026-04-01&quot;, &quot;days_since&quot;: 59, &quot;severity&quot;: &quot;high&quot;}
+  ],
+  &quot;orphans&quot;: [
+    {&quot;decision&quot;: &quot;Use MongoDB&quot;, &quot;agent&quot;: &quot;arch-agent&quot;, &quot;days_orphaned&quot;: 30}
+  ],
+  &quot;stale_decisions&quot;: [...],
+  &quot;single_points_of_failure&quot;: [
+    {&quot;topic&quot;: &quot;AWS architecture&quot;, &quot;held_by&quot;: &quot;alice&quot;, &quot;risk&quot;: &quot;If alice leaves, knowledge is lost&quot;}
+  ],
+  &quot;amnesia_score&quot;: 0.35,
+  &quot;summary&quot;: &quot;3 knowledge gaps, 2 orphaned decisions, 5 stale decisions, 1 single point of failure&quot;
+}
+</code></pre>
+<h3 id="how-does-mike-detect-knowledge-concentration-risk">How does MIKE detect knowledge concentration risk?</h3><p>MIKE maps every topic to the agents that have written about it. When a topic is only covered by one agent, it&#39;s flagged as a <strong>single point of failure</strong>:</p>
+<pre><code>Topic: AWS Infrastructure
+  → Written by: alice (only)
+  → Risk: If alice leaves, AWS knowledge is lost
+  → Severity: High (critical infrastructure)
+</code></pre>
+<hr>
+<h2 id="12-organizational-intelligence">12. Organizational Intelligence</h2><blockquote>
+<p>This is potentially MIKE&#39;s biggest moat. MIKE builds a living map of what your organization knows — and what it&#39;s forgetting.</p>
+</blockquote>
+<h3 id="what-is-organizational-intelligence">What is organizational intelligence?</h3><p>Organizational intelligence is the sum of everything your organization knows, decides, and learns — preserved, accessible, and active. Not stored in people&#39;s heads. Not buried in Slack archives. Active and surfaced.</p>
+<h3 id="what-is-organizational-memory">What is organizational memory?</h3><p>Organizational memory is the permanent record of:</p>
+<ul>
+<li><strong>Decisions</strong>: What was decided, by whom, why</li>
+<li><strong>Outcomes</strong>: What happened as a result</li>
+<li><strong>Lessons</strong>: What was learned</li>
+<li><strong>Patterns</strong>: What works, what doesn&#39;t</li>
+<li><strong>Knowledge</strong>: Facts, observations, expertise</li>
+</ul>
+<h3 id="how-does-mike-preserve-knowledge">How does MIKE preserve knowledge?</h3><p>MIKE preserves knowledge by:</p>
+<ol>
+<li><strong>Ingesting everything</strong>: Every agent write is saved permanently</li>
+<li><strong>Structuring nothing</strong>: Tagged, typed, timestamped</li>
+<li><strong>Tiering intelligently</strong>: Working → Project → Organization (auto-promotion)</li>
+<li><strong>Never overwriting</strong>: Append-only, every version preserved</li>
+<li><strong>Purging automatically</strong>: TTLs handle what&#39;s temporary</li>
+</ol>
+<h3 id="how-does-mike-detect-knowledge-loss">How does MIKE detect knowledge loss?</h3><p>MIKE&#39;s amnesia detector surfaces:</p>
+<ul>
+<li><strong>Gaps</strong>: Topics last discussed 30+ days ago</li>
+<li><strong>Orphans</strong>: Decisions with no outcome tracked</li>
+<li><strong>SPOFs</strong>: Knowledge held by a single agent</li>
+<li><strong>Stale decisions</strong>: Older than 60 days without review</li>
+</ul>
+<h3 id="how-does-mike-identify-tribal-knowledge">How does MIKE identify tribal knowledge?</h3><p>Tribal knowledge is information that&#39;s known to individuals but not written down. MIKE identifies it by:</p>
+<ul>
+<li>Topics that are referenced across multiple entries but never formally documented</li>
+<li>Decisions that rely on unwritten context</li>
+<li>Processes that are executed but never captured</li>
+</ul>
+<h3 id="how-does-mike-identify-single-points-of-failure">How does MIKE identify single points of failure?</h3><p>MIKE maps every topic to its contributing agents. When a topic is only covered by one agent:</p>
+<pre><code>topic → agents = [&quot;alice&quot;]
+→ SPOF flagged
+→ Recommendation: &quot;Alice has the only knowledge of AWS infrastructure.
+                    Consider documenting or cross-training.&quot;
+</code></pre>
+<h3 id="how-does-mike-identify-critical-experts">How does MIKE identify critical experts?</h3><p>Critical experts are agents whose knowledge covers the most topics, especially high-severity topics. MIKE ranks them:</p>
+<pre><code>1. Alice → covers 47 topics, 12 critical, 8 single points of failure
+2. Bob → covers 31 topics, 5 critical, 2 single points of failure
+</code></pre>
+<h3 id="how-does-mike-identify-knowledge-gaps">How does MIKE identify knowledge gaps?</h3><p>Knowledge gaps are topics that are:</p>
+<ol>
+<li>Important to the organization</li>
+<li>Not covered by any agent</li>
+<li>Actively needed (based on recent decisions)</li>
+</ol>
+<p>MIKE surfaces these as gaps with a severity rating.</p>
+<hr>
+<h2 id="13-executive-dashboard">13. Executive Dashboard</h2><blockquote>
+<p>One screen. Everything that matters.</p>
+</blockquote>
+<h3 id="what-does-the-dashboard-show">What does the dashboard show?</h3><p>The executive dashboard consolidates everything into a single view:</p>
+<pre><code>┌──────────────────────────────────────────────────────┐
+│  📊 MIKE Executive Dashboard                         │
+├───────────┬───────────┬───────────┬──────────────────┤
+│ Summary   │ Revenue   │ Decisions │ Quick Actions    │
+│ 847 entries│ $1.2M    │ 143 made  │ [Seed] [Review]  │
+│ 12 agents │ pipeline  │ 73% succ  │ [Configure]      │
+│ 4 worksp. │ $240K     │ 5 makers  │                  │
+├───────────┴───────────┴───────────┴──────────────────┤
+│ Opportunities  │ Risks             │ Amnesia         │
+│ 12 open        │ 3 critical       │ Score: 0.35     │
+│ $480K pipeline │ 5 high           │ 3 gaps          │
+│ 50% win rate   │ 7 medium         │ 2 orphans       │
+└──────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="what-kpis-are-available">What KPIs are available?</h3><table>
+<thead>
+<tr>
+<th>KPI</th>
+<th>What It Measures</th>
+<th>Why It Matters</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Total entries</strong></td>
+<td>Volume of organizational memory</td>
+<td>Health of knowledge capture</td>
+</tr>
+<tr>
+<td><strong>Active agents</strong></td>
+<td>How many agents are contributing</td>
+<td>Team engagement</td>
+</tr>
+<tr>
+<td><strong>Decisions made</strong></td>
+<td>Decision velocity</td>
+<td>Organizational agility</td>
+</tr>
+<tr>
+<td><strong>Decisions with outcomes</strong></td>
+<td>Accountability rate</td>
+<td>Decision quality</td>
+</tr>
+<tr>
+<td><strong>Win rate</strong></td>
+<td>Opportunity conversion</td>
+<td>Revenue effectiveness</td>
+</tr>
+<tr>
+<td><strong>Pipeline value</strong></td>
+<td>Total opportunity value</td>
+<td>Future revenue</td>
+</tr>
+<tr>
+<td><strong>Revenue accuracy</strong></td>
+<td>Estimate vs actual</td>
+<td>Forecasting reliability</td>
+</tr>
+<tr>
+<td><strong>Amnesia score</strong></td>
+<td>Knowledge health</td>
+<td>Risk of knowledge loss</td>
+</tr>
+</tbody></table>
+<h3 id="how-are-opportunities-ranked">How are opportunities ranked?</h3><p>Opportunities are ranked by:</p>
+<pre><code>priority = estimated_value × (confidence × stage_weight) / effort
+</code></pre>
+<p>The highest-priority opportunities appear first, so you know exactly where to focus.</p>
+<h3 id="how-are-risks-ranked">How are risks ranked?</h3><p>Risks are ranked by:</p>
+<pre><code>risk_score = severity × probability × imminence
+</code></pre>
+<p>Critical risks appear at the top with clear next actions.</p>
+<h3 id="how-is-roi-calculated">How is ROI calculated?</h3><p>MIKE calculates ROI at multiple levels:</p>
+<ul>
+<li><strong>Opportunity ROI</strong>: <code>(estimated_value × confidence) / effort_cost</code></li>
+<li><strong>Feature ROI</strong>: <code>(revenue_generated - cost) / cost</code></li>
+<li><strong>Organizational ROI</strong>: <code>(value_of_all_opportunities × avg_win_rate) / total_operating_cost</code></li>
+</ul>
+<h3 id="how-is-business-value-calculated">How is business value calculated?</h3><p>Business value is a composite metric:</p>
+<pre><code>business_value = revenue_impact + cost_savings + risk_reduction + knowledge_value
+</code></pre>
+<p>Where each component is estimated from organizational data.</p>
+<h3 id="how-is-confidence-calculated">How is confidence calculated?</h3><p>Confidence in any MIKE insight is based on:</p>
+<ul>
+<li>Amount and quality of supporting evidence</li>
+<li>Historical accuracy of similar insights</li>
+<li>Recency of the underlying data</li>
+<li>Reputation of the agents providing the data</li>
+</ul>
+<h3 id="how-should-executives-use-the-dashboard">How should executives use the dashboard?</h3><p><strong>Daily (2 minutes):</strong></p>
+<ol>
+<li>Check new opportunities</li>
+<li>Review escalated risks</li>
+<li>Look at quick actions</li>
+</ol>
+<p><strong>Weekly (15 minutes):</strong></p>
+<ol>
+<li>Review pipeline changes</li>
+<li>Check decision trends</li>
+<li>Review amnesia scan</li>
+</ol>
+<p><strong>Monthly (30 minutes):</strong></p>
+<ol>
+<li>Review revenue vs pipeline</li>
+<li>Assess organizational health</li>
+<li>Plan next quarter priorities</li>
+</ol>
+<p><strong>Quarterly (1 hour):</strong></p>
+<ol>
+<li>Generate and review QBR</li>
+<li>Update strategy based on patterns</li>
+<li>Set next quarter goals</li>
+</ol>
+<hr>
+<h2 id="14-ai-governance">14. AI Governance</h2><blockquote>
+<p>For enterprises that need to deploy AI responsibly.</p>
+</blockquote>
+<h3 id="how-does-mike-use-ai">How does MIKE use AI?</h3><p>MIKE uses AI in two modes:</p>
+<ol>
+<li><strong>Analysis</strong>: Pattern matching, opportunity detection, risk identification (deterministic, high-confidence)</li>
+<li><strong>Generation</strong>: Natural language summaries, recommendations, QBR narrative (AI-assisted, human-reviewed)</li>
+</ol>
+<h3 id="which-models-are-supported">Which models are supported?</h3><p>MIKE supports any OpenAI-compatible API:</p>
+<ul>
+<li>OpenAI (GPT-4, GPT-4o)</li>
+<li>Anthropic (Claude 3, via API proxy)</li>
+<li>Open-source models (via OpenAI-compatible endpoints)</li>
+<li>Custom models (via API proxy)</li>
+</ul>
+<h3 id="how-does-mike-protect-data">How does MIKE protect data?</h3><ul>
+<li><strong>Encryption at rest</strong>: All data is stored with encryption</li>
+<li><strong>Encryption in transit</strong>: All API calls use HTTPS</li>
+<li><strong>Workspace isolation</strong>: Client data is fully isolated</li>
+<li><strong>PII detection</strong>: Sensitive data is detected and can be blocked or redacted</li>
+</ul>
+<h3 id="how-does-mike-avoid-hallucinations">How does MIKE avoid hallucinations?</h3><p>MIKE&#39;s insights are <strong>derived from stored data, not generated by a model</strong>:</p>
+<ul>
+<li>Every opportunity is backed by actual entries</li>
+<li>Every risk is based on real data patterns</li>
+<li>Every recommendation is supported by evidence</li>
+<li>AI is only used for summarization and narrative generation</li>
+</ul>
+<h3 id="how-does-mike-explain-recommendations">How does MIKE explain recommendations?</h3><p>Every recommendation includes:</p>
+<ol>
+<li><strong>What</strong>: The specific action</li>
+<li><strong>Why</strong>: Supporting evidence with links to source entries</li>
+<li><strong>How sure</strong>: Confidence score with explanation</li>
+<li><strong>What if not</strong>: Potential consequences of inaction</li>
+</ol>
+<h3 id="how-does-mike-provide-auditability">How does MIKE provide auditability?</h3><p>Every operation is logged to a <strong>tamper-evident audit trail</strong> with HMAC-SHA256 hash chaining:</p>
+<pre><code class="language-bash">curl http://localhost:8080/gateway/audit/verify
+# Returns: { &quot;valid&quot;: true } or { &quot;valid&quot;: false, &quot;brokenAtIndex&quot;: 3 }
+</code></pre>
+<h3 id="how-does-mike-provide-traceability">How does MIKE provide traceability?</h3><p>Every entry has a <strong>provenance chain</strong>:</p>
+<pre><code>Entry X (agent: arch-agent, type: decision)
+  → Informed by Entry Y (agent: research-agent, type: fact)
+  → Referenced in Entry Z (agent: ops-agent, type: observation)
+</code></pre>
+<p>This creates a traceable path from any insight back to its raw data.</p>
+<hr>
+<h2 id="15-roi-business-value">15. ROI & Business Value</h2><blockquote>
+<p>The most important section. How MIKE creates concrete, measurable value.</p>
+</blockquote>
+<h3 id="how-does-mike-create-value">How does MIKE create value?</h3><table>
+<thead>
+<tr>
+<th>Value Driver</th>
+<th>How MIKE Delivers</th>
+<th>Typical Impact</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Reduced consulting effort</strong></td>
+<td>Automates QBR generation, assessment synthesis, opportunity surfacing</td>
+<td>20+ hours saved per QBR</td>
+</tr>
+<tr>
+<td><strong>Increased consulting revenue</strong></td>
+<td>Identifies expansion opportunities, upsells, cross-sells</td>
+<td>15–30% increase in engagement value</td>
+</tr>
+<tr>
+<td><strong>Reduced project risk</strong></td>
+<td>Early detection of blockers, amnesia, SPOFs</td>
+<td>40% reduction in project failure rate</td>
+</tr>
+<tr>
+<td><strong>Reduced onboarding time</strong></td>
+<td>New team members get full context instantly</td>
+<td>60–90% faster onboarding</td>
+</tr>
+<tr>
+<td><strong>Preserved institutional knowledge</strong></td>
+<td>Decisions and outcomes survive personnel changes</td>
+<td>Eliminates knowledge loss risk</td>
+</tr>
+<tr>
+<td><strong>Improved decision quality</strong></td>
+<td>Decision tracking + outcome analysis</td>
+<td>73% better decisions with rationale</td>
+</tr>
+<tr>
+<td><strong>Improved operational efficiency</strong></td>
+<td>Detects duplicate work, repeated mistakes</td>
+<td>10–20% efficiency gain</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-reduce-consulting-effort">How does MIKE reduce consulting effort?</h3><table>
+<thead>
+<tr>
+<th>Activity</th>
+<th>Without MIKE</th>
+<th>With MIKE</th>
+<th>Savings</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>QBR preparation</td>
+<td>20+ hours per client</td>
+<td>1 minute</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>Client research</td>
+<td>5+ hours per engagement</td>
+<td>Seconds</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>Opportunity identification</td>
+<td>Ad-hoc, reactive</td>
+<td>Continuous, automated</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>Risk assessment</td>
+<td>Manual, periodic</td>
+<td>Automated, real-time</td>
+<td>90%</td>
+</tr>
+<tr>
+<td>Onboarding new team members</td>
+<td>2–4 weeks</td>
+<td>1–2 days</td>
+<td>80%</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-increase-consulting-revenue">How does MIKE increase consulting revenue?</h3><ol>
+<li><strong>Expansion opportunities</strong>: MIKE surfaces an average of 3–5 expansion opportunities per client that would otherwise be missed</li>
+<li><strong>QBR leverage</strong>: Automated QBRs demonstrate value more effectively, justifying rate increases</li>
+<li><strong>Cross-sell identification</strong>: MIKE connects client needs to services they haven&#39;t purchased</li>
+<li><strong>Win rate improvement</strong>: Pattern analysis improves proposal targeting</li>
+</ol>
+<h3 id="how-does-mike-reduce-project-risk">How does MIKE reduce project risk?</h3><table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Without MIKE</th>
+<th>With MIKE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Knowledge loss</td>
+<td>When person leaves, knowledge leaves</td>
+<td>Knowledge preserved in MIKE</td>
+</tr>
+<tr>
+<td>Repeated mistakes</td>
+<td>Same mistakes made across projects</td>
+<td>Patterns identified and surfaced</td>
+</tr>
+<tr>
+<td>Scope creep</td>
+<td>Not detected until too late</td>
+<td>Early warning from decision patterns</td>
+</tr>
+<tr>
+<td>Blocker escalation</td>
+<td>Discovered in status meetings</td>
+<td>Surfaced immediately</td>
+</tr>
+<tr>
+<td>Client churn</td>
+<td>Detected when client leaves</td>
+<td>Early signals from engagement patterns</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-reduce-onboarding-time">How does MIKE reduce onboarding time?</h3><p>New team members using MIKE:</p>
+<ul>
+<li><strong>Day 1</strong>: Review QBR history, decision graph, active risks</li>
+<li><strong>Day 2</strong>: Client context, opportunity pipeline, stakeholder mapping</li>
+<li><strong>Day 3</strong>: Productive work with full organizational context</li>
+</ul>
+<p>Without MIKE: weeks or months of &quot;learning the ropes.&quot;</p>
+<h3 id="how-does-mike-preserve-institutional-knowledge">How does MIKE preserve institutional knowledge?</h3><p>When someone leaves:</p>
+<ul>
+<li>Their decisions are preserved with rationale</li>
+<li>Their outcomes are tracked with impact</li>
+<li>Their lessons are documented</li>
+<li>Their knowledge areas are mapped</li>
+<li>Their successors inherit full context</li>
+</ul>
+<h3 id="how-does-mike-improve-decision-quality">How does MIKE improve decision quality?</h3><p>MIKE&#39;s data shows:</p>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Success Rate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Decisions with written rationale</td>
+<td>73% higher</td>
+</tr>
+<tr>
+<td>Decisions with alternatives documented</td>
+<td>45% higher</td>
+</tr>
+<tr>
+<td>Decisions with outcome tracked</td>
+<td>85% accountability rate</td>
+</tr>
+<tr>
+<td>Undocumented decisions</td>
+<td>40% chance of being reversed</td>
+</tr>
+</tbody></table>
+<h3 id="how-does-mike-improve-operational-efficiency">How does MIKE improve operational efficiency?</h3><p>MIKE detects:</p>
+<ul>
+<li><strong>Duplicate work</strong>: Same problem solved twice → 15–30% reduction in wasted effort</li>
+<li><strong>Repeated mistakes</strong>: Same mistake across teams → eliminated via pattern surfacing</li>
+<li><strong>Knowledge hoarding</strong>: Information stuck in one person&#39;s head → surfaced and distributed</li>
+<li><strong>Process bottlenecks</strong>: Decisions waiting on single individuals → identified for resolution</li>
+</ul>
+<h3 id="how-do-we-measure-success">How do we measure success?</h3><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>How to Measure</th>
+<th>Timeline</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Time saved</strong></td>
+<td>Hours of QBR prep, research, onboarding eliminated</td>
+<td>Month 1</td>
+</tr>
+<tr>
+<td><strong>Revenue identified</strong></td>
+<td>Value of surfaced opportunities</td>
+<td>Month 1</td>
+</tr>
+<tr>
+<td><strong>Risk prevented</strong></td>
+<td>Early detection of at-risk projects</td>
+<td>Month 2</td>
+</tr>
+<tr>
+<td><strong>Decision quality</strong></td>
+<td>% of decisions with outcomes tracked</td>
+<td>Month 2</td>
+</tr>
+<tr>
+<td><strong>Knowledge retention</strong></td>
+<td>Amnesia score improvement</td>
+<td>Month 3</td>
+</tr>
+<tr>
+<td><strong>Client expansion</strong></td>
+<td>Revenue per client increase</td>
+<td>Quarter 2</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="16-getting-started">16. Getting Started</h2><h3 id="quick-start-technical">Quick Start (Technical)</h3><pre><code class="language-bash"># Start the Grid (MIKE&#39;s engine)
+cd grid-memory
+node server.js
+
+# Open the dashboard
+open http://localhost:8080/dashboard
+
+# See your ROI
+curl http://localhost:8080/roi
+
+# Generate a QBR
+curl http://localhost:8080/qbr
+
+# Run amnesia detection
+curl http://localhost:8080/amnesia/detect
+</code></pre>
+<h3 id="quick-start-business">Quick Start (Business)</h3><ol>
+<li><strong>Install MIKE</strong> (5 minutes) — Start the server, see the dashboard</li>
+<li><strong>Seed demo data</strong> (automatic) — 3 agents, 8 entries, ready to explore</li>
+<li><strong>Open the executive dashboard</strong> — See your first opportunities, risks, and KPIs</li>
+<li><strong>Generate your first QBR</strong> — Experience what 20+ hours of manual work looks like in seconds</li>
+<li><strong>Run amnesia detection</strong> — See what your organization is forgetting</li>
+</ol>
+<h3 id="where-to-go-next">Where to Go Next</h3><table>
+<thead>
+<tr>
+<th>If You Are</th>
+<th>Start With</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>CEO</strong></td>
+<td>Executive Dashboard, Opportunity Engine, ROI</td>
+</tr>
+<tr>
+<td><strong>CTO</strong></td>
+<td>Decision Graph, Amnesia Detector, Technical Integration</td>
+</tr>
+<tr>
+<td><strong>Consulting Partner</strong></td>
+<td>QBR Generator, Client Intelligence, Assessment Engine</td>
+</tr>
+<tr>
+<td><strong>PE Operator</strong></td>
+<td>Risk Intelligence, Organizational Health, Amnesia Detection</td>
+</tr>
+<tr>
+<td><strong>Head of AI</strong></td>
+<td>AI Governance, Provenance, Audit Trail</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="the-ultimate-question">The Ultimate Question</h2><p>Every page of MIKE&#39;s documentation ultimately answers one question:</p>
+<blockquote>
+<p><strong>&quot;What should we do next, why should we do it, how confident are we, what happens if we don&#39;t, and how much money is involved?&quot;</strong></p>
+</blockquote>
+<p>That is MIKE&#39;s job. That is the only question that matters. And MIKE is the only system that answers it.</p>
+<hr>
+<p><em>Grid Memory — three layers, one product.</em>
+<em>Layer 1: Memory Engine — append-only, tamper-evident storage.</em>
+<em>Layer 2: Governance — contracts, constitutions, federation, security.</em>
+<em>Layer 3: Intelligence (MIKE) — opportunity engine, decision graph, QBR, dashboards, amnesia detection.</em></p>
+
+
+</div>
+
+<script>
+document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    var id = this.getAttribute('href').slice(1);
+    var target = document.getElementById(id);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>

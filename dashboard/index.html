@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Memory — Dashboard</title>
+<style>
+  /* ─── Reset & Base ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0b0d11;
+    --bg-secondary: #13161c;
+    --bg-card: #1a1e28;
+    --bg-card-hover: #222838;
+    --bg-input: #1a1e28;
+    --border: #272d3d;
+    --border-focus: #4f7bff;
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa0b0;
+    --text-muted: #5c6278;
+    --accent: #4f7bff;
+    --accent-glow: rgba(79, 123, 255, 0.15);
+    --green: #34c759;
+    --green-bg: rgba(52, 199, 89, 0.1);
+    --red: #ff453a;
+    --red-bg: rgba(255, 69, 58, 0.1);
+    --orange: #ff9f0a;
+    --orange-bg: rgba(255, 159, 10, 0.1);
+    --purple: #bf5af2;
+    --purple-bg: rgba(191, 90, 242, 0.1);
+    --cyan: #5ac8fa;
+    --cyan-bg: rgba(90, 200, 250, 0.1);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+    --transition: 180ms ease;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Oxygen, Ubuntu, sans-serif;
+    --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  }
+
+  html { font-size: 15px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ─── Layout ─── */
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .app-header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+  }
+  .app-header h1 .grid-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: white;
+    font-weight: 700;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+  .app-main {
+    flex: 1;
+    padding: 24px 28px;
+    max-width: 1440px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ─── Stats Row ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    transition: border-color var(--transition);
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card .stat-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .stat-card .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-card .stat-sub {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .stat-card.stat-alive .stat-value { color: var(--green); }
+  .stat-card.stat-expired .stat-value { color: var(--orange); }
+
+  /* ─── Search Bar ─── */
+  .search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .search-bar .search-input-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+  .search-bar .search-input-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .search-bar input,
+  .search-bar select {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    font-family: var(--font);
+    outline: none;
+  }
+  .search-bar input:focus,
+  .search-bar select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .search-bar select {
+    width: auto;
+    min-width: 120px;
+    padding: 10px 32px 10px 12px;
+    background: var(--bg-input);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%235c6278' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+  .search-bar button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+    font-family: var(--font);
+    white-space: nowrap;
+  }
+  .search-bar button:active { transform: scale(0.96); }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #627dff; }
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border) !important;
+  }
+  .btn-secondary:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+  .btn-green {
+    background: var(--green);
+    color: white;
+  }
+  .btn-green:hover { background: #30b54e; }
+  .btn-red {
+    background: var(--red);
+    color: white;
+  }
+  .btn-red:hover { background: #e03a30; }
+
+  /* ─── Two-Column Layout ─── */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── Panel ─── */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+  }
+  .panel-header .count-badge {
+    background: var(--bg-input);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .panel-body {
+    padding: 0;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  /* ─── Timeline Entries ─── */
+  .timeline-entry {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background var(--transition);
+    position: relative;
+  }
+  .timeline-entry:last-child { border-bottom: none; }
+  .timeline-entry:hover { background: var(--bg-card-hover); }
+
+  .timeline-entry .entry-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .entry-type-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .entry-type-badge.type-decision   { background: var(--purple-bg); color: var(--purple); }
+  .entry-type-badge.type-fact       { background: var(--green-bg);  color: var(--green); }
+  .entry-type-badge.type-task_status{ background: var(--orange-bg); color: var(--orange); }
+  .entry-type-badge.type-artifact_ref{background: var(--cyan-bg);  color: var(--cyan); }
+  .entry-type-badge.type-handoff    { background: rgba(255,69,58,0.12); color: var(--red); }
+  .entry-type-badge.type-question   { background: var(--orange-bg); color: var(--orange); }
+  .entry-type-badge.type-observation{ background: rgba(79,123,255,0.12);  color: var(--accent); }
+  .entry-type-badge.type-blocker    { background: var(--red-bg);    color: var(--red); }
+  .entry-type-badge.type-state_update{background: var(--cyan-bg);  color: var(--cyan); }
+  .entry-type-badge.type-default    { background: var(--bg-input);  color: var(--text-muted); }
+
+  .entry-agent {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .entry-time {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .entry-tag {
+    font-size: 0.68rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--bg-input);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .entry-content {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+  }
+  .entry-content.expanded {
+    -webkit-line-clamp: unset;
+    display: block;
+  }
+  .entry-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    color: var(--orange);
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .empty-state svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* ─── Sidebar Panels ─── */
+  .sidebar-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sidebar-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .sidebar-panel .panel-header {
+    padding: 12px 16px;
+    font-size: 0.75rem;
+  }
+  .sidebar-panel .panel-body {
+    padding: 14px 16px;
+    max-height: none;
+  }
+
+  /* Agent Activity */
+  .agent-bar-wrap { margin-bottom: 10px; }
+  .agent-bar-wrap:last-child { margin-bottom: 0; }
+  .agent-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    margin-bottom: 4px;
+  }
+  .agent-bar-label .agent-name { color: var(--text-primary); font-weight: 500; }
+  .agent-bar-label .agent-count { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.72rem; }
+  .agent-bar-track {
+    height: 6px;
+    background: var(--bg-input);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .agent-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .agent-bar-fill.color-0 { background: var(--accent); }
+  .agent-bar-fill.color-1 { background: var(--green); }
+  .agent-bar-fill.color-2 { background: var(--orange); }
+  .agent-bar-fill.color-3 { background: var(--purple); }
+  .agent-bar-fill.color-4 { background: var(--cyan); }
+  .agent-bar-fill.color-5 { background: var(--red); }
+  .agent-bar-fill.color-6 { background: #ffd60a; }
+
+  /* Type breakdown */
+  .type-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .type-chip {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .type-chip .type-count {
+    font-weight: 700;
+    margin-left: 4px;
+    opacity: 0.7;
+  }
+
+  /* ─── Modal (Entry Detail) ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 640px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    z-index: 1;
+  }
+  .modal-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.3rem;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background var(--transition);
+  }
+  .modal-close:hover { background: var(--bg-input); color: var(--text-primary); }
+  .modal-body { padding: 20px; }
+  .modal-field {
+    margin-bottom: 14px;
+  }
+  .modal-field:last-child { margin-bottom: 0; }
+  .modal-field .field-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .modal-field .field-value {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+    word-break: break-word;
+  }
+  .modal-field .field-value.mono {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+  .modal-field .field-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .modal-field .field-tags span {
+    font-size: 0.78rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--bg-input);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  /* ─── Write Modal ─── */
+  .write-form { display: flex; flex-direction: column; gap: 12px; }
+  .write-form label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .write-form input,
+  .write-form textarea,
+  .write-form select {
+    padding: 9px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color var(--transition);
+  }
+  .write-form input:focus,
+  .write-form textarea:focus,
+  .write-form select:focus {
+    border-color: var(--accent);
+  }
+  .write-form textarea {
+    min-height: 100px;
+    resize: vertical;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+  .write-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .write-form .form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+
+  /* ─── Search Results ─── */
+  .search-result-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--bg-card-hover); }
+  .search-result-item .sr-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .search-result-item .sr-content {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ─── Loading Spinner ─── */
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Toast ─── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .toast {
+    padding: 12px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: toastIn 0.25s ease;
+    max-width: 360px;
+  }
+  .toast-success { background: var(--green); color: white; }
+  .toast-error { background: var(--red); color: white; }
+  .toast-info { background: var(--accent); color: white; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── Inline detail — full snippet in modal ─── */
+  .content-preview {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  /* ─── Responsive ─── */
+  /* ─── Tab Bar ─── */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+    font-family: var(--font);
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+  .tab-btn.active { background: var(--accent); color: white; }
+
+  /* ─── Agent Tree ─── */
+  .tree-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .tree-canvas-wrap canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .tree-tooltip {
+    position: absolute;
+    display: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: var(--text-primary);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    pointer-events: none;
+    z-index: 50;
+    max-width: 260px;
+    line-height: 1.5;
+  }
+  .tree-tooltip .tt-name { font-weight: 600; color: var(--accent); }
+  .tree-tooltip .tt-stat { color: var(--text-secondary); }
+  .tree-legend {
+    display: flex;
+    gap: 16px;
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    align-items: center;
+  }
+  .tree-legend .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .tree-legend .legend-dot.active { background: var(--green); }
+  .tree-legend .legend-dot.inactive { background: #495057; }
+
+  /* ─── Timeline Playback ─── */
+  .playback-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 18px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .playback-controls label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .playback-controls input[type="datetime-local"] {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-family: var(--font);
+    outline: none;
+  }
+  .playback-controls input[type="datetime-local"]:focus {
+    border-color: var(--accent);
+  }
+  .playback-controls select {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-family: var(--font);
+    outline: none;
+    cursor: pointer;
+  }
+  .playback-body {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 10px 18px;
+  }
+  .playback-entry {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    background: var(--bg-card);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .playback-entry.visible { opacity: 1; }
+  .playback-entry .pe-time {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .playback-entry .pe-time .pe-index {
+    background: var(--bg-input);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+  .playback-entry .pe-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .playback-entry .pe-content {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .playback-progress {
+    width: 100%;
+    height: 3px;
+    background: var(--bg-input);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .playback-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .playback-counter {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  @media (max-width: 768px) {
+    .app-header { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+    .app-main { padding: 16px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .stat-card { padding: 12px; }
+    .stat-card .stat-value { font-size: 1.3rem; }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .search-bar { flex-direction: column; }
+    .search-bar .search-input-wrap { min-width: 100%; }
+    .search-bar select { width: 100%; }
+    .search-bar button { width: 100%; justify-content: center; }
+    .write-form .form-row { grid-template-columns: 1fr; }
+    .modal { max-width: 100%; margin: 10px; }
+    .header-right .header-status .status-text { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="app-header">
+  <h1>
+    <span class="grid-icon">◆</span>
+    Grid Memory
+  </h1>
+  <div class="header-right">
+    <div class="header-status">
+      <span class="status-dot online" id="statusDot"></span>
+      <span class="status-text" id="statusText">Connected</span>
+    </div>
+    <button class="btn-primary" onclick="openWriteModal()" style="padding:8px 14px;font-size:0.8rem;">
+      ＋ Write Test Entry
+    </button>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main class="app-main">
+
+  <!-- Stats Row -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card">
+      <div class="stat-label">Total Entries</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-card stat-alive">
+      <div class="stat-label">Alive</div>
+      <div class="stat-value" id="statAlive">—</div>
+      <div class="stat-sub" id="statAliveSub"></div>
+    </div>
+    <div class="stat-card stat-expired">
+      <div class="stat-label">Expired</div>
+      <div class="stat-value" id="statExpired">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unique Agents</div>
+      <div class="stat-value" id="statAgents">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unique Tags</div>
+      <div class="stat-value" id="statTags">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Store Size</div>
+      <div class="stat-value" id="statSize">—</div>
+      <div class="stat-sub" id="statSizeSub"></div>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search tags, content, agents…" onkeydown="if(event.key==='Enter')doSearch()">
+    </div>
+    <select id="searchType">
+      <option value="">All Types</option>
+      <option value="decision">Decision</option>
+      <option value="fact">Fact</option>
+      <option value="task_status">Task Status</option>
+      <option value="artifact_ref">Artifact Ref</option>
+      <option value="handoff">Handoff</option>
+      <option value="question">Question</option>
+      <option value="observation">Observation</option>
+      <option value="blocker">Blocker</option>
+      <option value="state_update">State Update</option>
+    </select>
+    <input type="text" id="searchAgent" placeholder="Agent ID" style="max-width:140px;padding-left:12px;">
+    <button class="btn-primary" onclick="doSearch()">Search</button>
+    <button class="btn-secondary" onclick="clearSearch()">Clear</button>
+  </div>
+
+  <!-- ─── Tab Bar ─── -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="activity">Activity Timeline</button>
+    <button class="tab-btn" data-tab="tree">Agent Tree</button>
+    <button class="tab-btn" data-tab="timeline">Timeline Playback</button>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="dashboard-grid">
+
+    <!-- Left: Tab Content Area -->
+    <div>
+
+      <!-- Activity Timeline panel -->
+      <div class="panel" id="panelActivity">
+        <div class="panel-header">
+          <span id="timelineTitle">Activity Timeline</span>
+          <span class="count-badge" id="timelineCount">0</span>
+        </div>
+        <div class="panel-body" id="timelineBody">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            <p>Loading entries…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent Tree panel -->
+      <div class="panel" id="panelTree" style="display:none;">
+        <div class="panel-header">
+          <span>Agent Family Tree</span>
+          <span class="count-badge" id="treeEdgeCount">0 handoffs</span>
+        </div>
+        <div class="tree-canvas-wrap" id="treeCanvasWrap">
+          <canvas id="treeCanvas"></canvas>
+          <div class="tree-tooltip" id="treeTooltip"></div>
+        </div>
+        <div class="tree-legend">
+          <span><span class="legend-dot active"></span> Active (handoff in last 10m)</span>
+          <span><span class="legend-dot inactive"></span> Inactive</span>
+          <span>Node size = handoff count</span>
+          <span>Edge thickness = handoffs between pair</span>
+        </div>
+      </div>
+
+      <!-- Timeline Playback panel -->
+      <div class="panel" id="panelTimeline" style="display:none;">
+        <div class="panel-header">
+          <span>Time Travel Playback</span>
+          <span class="playback-counter" id="playbackCounter">0 / 0</span>
+        </div>
+        <div class="playback-controls">
+          <label>From
+            <input type="datetime-local" id="tlStart">
+          </label>
+          <label>To
+            <input type="datetime-local" id="tlEnd">
+          </label>
+          <button class="btn-primary" id="tlLoadBtn" onclick="loadTimelinePlayback()">Load</button>
+          <button class="btn-green" id="tlPlayBtn" onclick="togglePlayback()" disabled>▶ Play</button>
+          <label>Speed
+            <select id="tlSpeed">
+              <option value="1">1x</option>
+              <option value="2">2x</option>
+              <option value="5">5x</option>
+              <option value="10">10x</option>
+            </select>
+          </label>
+          <div class="playback-progress" style="flex:1;min-width:80px;">
+            <div class="playback-progress-bar" id="playbackProgressBar"></div>
+          </div>
+        </div>
+        <div class="playback-body" id="playbackBody">
+          <div class="empty-state"><p>Set date range and click Load</p></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div class="sidebar-panels">
+
+      <!-- Agent Activity -->
+      <div class="sidebar-panel">
+        <div class="panel-header">Agent Activity</div>
+        <div class="panel-body" id="agentActivityBody">
+          <div class="empty-state" style="padding:20px;">
+            <p>Loading agent activity…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Type Breakdown -->
+      <div class="sidebar-panel">
+        <div class="panel-header">Type Breakdown</div>
+        <div class="panel-body" id="typeBreakdownBody">
+          <div class="empty-state" style="padding:20px;">
+            <p>Loading types…</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ═══ MODAL: Entry Detail ═══ -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetailModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detailTitle">Entry Detail</h2>
+      <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody">
+      <div class="empty-state"><p>Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Write Entry ═══ -->
+<div class="modal-overlay" id="writeModal" onclick="if(event.target===this)closeWriteModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Write Test Entry</h2>
+      <button class="modal-close" onclick="closeWriteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form class="write-form" id="writeForm" onsubmit="submitWrite(event)">
+        <div class="form-row">
+          <label>Agent ID
+            <input type="text" id="writeAgent" value="dashboard" required>
+          </label>
+          <label>Type
+            <select id="writeType">
+              <option value="observation">Observation</option>
+              <option value="decision">Decision</option>
+              <option value="fact">Fact</option>
+              <option value="task_status">Task Status</option>
+              <option value="artifact_ref">Artifact Ref</option>
+              <option value="handoff">Handoff</option>
+              <option value="question">Question</option>
+              <option value="blocker">Blocker</option>
+              <option value="state_update">State Update</option>
+            </select>
+          </label>
+        </div>
+        <label>Tags (comma separated)
+          <input type="text" id="writeTags" placeholder="test, dashboard, demo">
+        </label>
+        <label>TTL (seconds, optional)
+          <input type="number" id="writeTTL" placeholder="86400 (24h)" min="60">
+        </label>
+        <label>Content
+          <textarea id="writeContent" placeholder="Enter your test entry content…" required></textarea>
+        </label>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeWriteModal()">Cancel</button>
+          <button type="submit" class="btn-green" id="writeSubmitBtn">Write Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Toast Container ═══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ─── Configuration ──────────────────────────────────────────────────────────────
+const API_BASE = window.location.origin;
+const REFRESH_INTERVAL = 5000;
+
+// ─── State ──────────────────────────────────────────────────────────────────────
+let refreshTimer = null;
+let searchMode = false;
+let cachedInfo = null;
+
+// ─── API helpers ────────────────────────────────────────────────────────────────
+
+async function apiGet(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function apiPost(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(b.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// ─── Toast ──────────────────────────────────────────────────────────────────────
+
+function toast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.3s';
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
+
+// ─── Stats ──────────────────────────────────────────────────────────────────────
+
+async function updateStats() {
+  try {
+    const info = await apiGet('/info');
+    cachedInfo = info;
+    document.getElementById('statTotal').textContent = info.total_entries;
+    document.getElementById('statAlive').textContent = info.alive_entries;
+    document.getElementById('statExpired').textContent = info.expired_entries;
+    document.getElementById('statAgents').textContent = info.unique_agents;
+    document.getElementById('statTags').textContent = info.unique_tags;
+    document.getElementById('statSize').textContent = info.store_size_kb < 1000
+      ? info.store_size_kb + ' KB'
+      : (info.store_size_kb / 1024).toFixed(1) + ' MB';
+
+    const alivePct = info.total_entries > 0
+      ? Math.round((info.alive_entries / info.total_entries) * 100)
+      : 0;
+    document.getElementById('statAliveSub').textContent = `${alivePct}% of total`;
+
+    const storePct = 0; // no max, just show size
+    document.getElementById('statSizeSub').textContent = `${Object.keys(info.by_type || {}).length} types`;
+
+    // Update agent activity and type breakdown
+    renderAgentActivity(info);
+    renderTypeBreakdown(info);
+
+  } catch (err) {
+    console.error('Stats error:', err);
+    setOffline(err.message);
+  }
+}
+
+// ─── Agent Activity ─────────────────────────────────────────────────────────────
+
+function renderAgentActivity(info) {
+  const body = document.getElementById('agentActivityBody');
+  const agents = info.by_agent || {};
+  const entries = Object.entries(agents).sort((a, b) => b[1] - a[1]);
+  const maxCount = entries.length > 0 ? entries[0][1] : 1;
+
+  if (entries.length === 0) {
+    body.innerHTML = `<div class="empty-state" style="padding:20px;"><p>No agents yet</p></div>`;
+    return;
+  }
+
+  body.innerHTML = entries.map(([agent, count], i) => {
+    const pct = (count / maxCount) * 100;
+    const colorIdx = i % 7;
+    return `
+      <div class="agent-bar-wrap">
+        <div class="agent-bar-label">
+          <span class="agent-name">${escHtml(agent)}</span>
+          <span class="agent-count">${count}</span>
+        </div>
+        <div class="agent-bar-track">
+          <div class="agent-bar-fill color-${colorIdx}" style="width:${pct}%"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── Type Breakdown ─────────────────────────────────────────────────────────────
+
+function renderTypeBreakdown(info) {
+  const body = document.getElementById('typeBreakdownBody');
+  const types = info.by_type || {};
+
+  if (Object.keys(types).length === 0) {
+    body.innerHTML = `<div class="empty-state" style="padding:20px;"><p>No entries yet</p></div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="type-breakdown">${
+    Object.entries(types).map(([type, count]) => `
+      <span class="type-chip type-${type}">${escHtml(type)} <span class="type-count">${count}</span></span>
+    `).join('')
+  }</div>`;
+}
+
+// ─── Timeline ───────────────────────────────────────────────────────────────────
+
+async function loadTimeline() {
+  if (searchMode) return;
+  try {
+    const data = await apiGet('/query?max=50');
+    renderTimeline(data.entries, 'Activity Timeline');
+    document.getElementById('timelineCount').textContent = data.entries.length;
+  } catch (err) {
+    console.error('Timeline error:', err);
+    const body = document.getElementById('timelineBody');
+    body.innerHTML = `<div class="empty-state"><p>Failed to load entries: ${escHtml(err.message)}</p></div>`;
+  }
+}
+
+function renderTimeline(entries, title) {
+  const body = document.getElementById('timelineBody');
+  document.getElementById('timelineTitle').textContent = title;
+  document.getElementById('timelineCount').textContent = entries.length;
+
+  if (!entries || entries.length === 0) {
+    body.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <p>No entries found</p>
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = entries.map((entry, idx) => {
+    const typeClass = `type-${entry.type || 'default'}`;
+    const time = formatTime(entry.created_at);
+    const tags = (entry.tags || []).filter(Boolean);
+    const score = entry._score;
+    const snippet = entry.content || '';
+
+    return `
+      <div class="timeline-entry" onclick="openDetail('${entry.id}', this)" style="animation:fadeIn 0.2s ease ${idx * 0.02}s both">
+        <div class="entry-head">
+          <span class="entry-type-badge ${typeClass}">${escHtml(entry.type || '—')}</span>
+          <span class="entry-agent">@${escHtml(entry.agent_id || '?')}</span>
+          ${score !== undefined ? `<span class="entry-score">★ ${Math.round(score)}</span>` : ''}
+          <span class="entry-time">${time}</span>
+        </div>
+        ${tags.length > 0 ? `<div class="entry-tags">${tags.map(t => `<span class="entry-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
+        <div class="entry-content">${escHtml(snippet)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── Search ─────────────────────────────────────────────────────────────────────
+
+async function doSearch() {
+  const query = document.getElementById('searchInput').value.trim();
+  const type = document.getElementById('searchType').value;
+  const agent = document.getElementById('searchAgent').value.trim();
+
+  // Build query params
+  const params = new URLSearchParams();
+  params.set('max', '50');
+
+  if (type) params.set('type', type);
+  if (agent) params.set('agents', agent);
+  if (query) {
+    // Try query as tags (comma-separated), otherwise as content via /inject
+    const parts = query.split(',').map(s => s.trim()).filter(Boolean);
+    if (parts.length > 0) {
+      params.set('tags', parts.join(','));
+    }
+  }
+
+  searchMode = true;
+  stopRefresh();
+
+  try {
+    const data = await apiGet(`/query?${params.toString()}`);
+    const entries = data.entries || [];
+
+    // If we have a text query (not tags), try inject for relevance
+    if (query && !query.includes(',') && entries.length > 0) {
+      // Tag match was made, great — show results
+    }
+
+    renderTimeline(entries, query ? `Search: "${query}"` : 'All Entries');
+    document.getElementById('timelineCount').textContent = entries.length;
+
+    if (entries.length === 0) {
+      toast('No results found', 'info');
+    }
+  } catch (err) {
+    toast(`Search failed: ${err.message}`, 'error');
+    console.error(err);
+  }
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchType').value = '';
+  document.getElementById('searchAgent').value = '';
+  searchMode = false;
+  startRefresh();
+  loadTimeline();
+  updateStats();
+}
+
+// ─── Entry Detail ───────────────────────────────────────────────────────────────
+
+function openDetail(entryId, el) {
+  // Try to get data from the DOM element we clicked
+  const modal = document.getElementById('detailModal');
+  const title = document.getElementById('detailTitle');
+  const body = document.getElementById('detailBody');
+
+  modal.classList.add('open');
+  title.textContent = 'Entry Detail';
+  body.innerHTML = `<div class="empty-state"><div class="spinner"></div><p>Loading…</p></div>`;
+
+  // We need to fetch this specific entry - we can search by ID or just get all and find it
+  // The Grid doesn't have a single-entry endpoint, so we'll query with max=50 and find it
+  apiGet('/query?max=50').then(data => {
+    const entry = (data.entries || []).find(e => e.id === entryId);
+    if (!entry) {
+      body.innerHTML = `<div class="empty-state"><p>Entry not found</p></div>`;
+      return;
+    }
+    renderDetail(entry, body, title);
+  }).catch(err => {
+    body.innerHTML = `<div class="empty-state"><p>Error: ${escHtml(err.message)}</p></div>`;
+  });
+}
+
+function renderDetail(entry, body, title) {
+  title.textContent = `Entry: ${entry.id}`;
+
+  const tags = (entry.tags || []).filter(Boolean);
+  const expiresIn = entry.expires_at ? timeUntil(entry.expires_at) : '—';
+
+  const ttlDisplay = entry.ttl_seconds
+    ? entry.ttl_seconds >= 86400
+      ? `${(entry.ttl_seconds / 86400).toFixed(1)} days`
+      : entry.ttl_seconds >= 3600
+        ? `${(entry.ttl_seconds / 3600).toFixed(1)} hours`
+        : `${entry.ttl_seconds} seconds`
+    : '—';
+
+  body.innerHTML = `
+    <div class="modal-field">
+      <div class="field-label">ID</div>
+      <div class="field-value mono">${escHtml(entry.id)}</div>
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Agent</div>
+      <div class="field-value"><span style="color:var(--accent);font-weight:500;">@${escHtml(entry.agent_id || '?')}</span></div>
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Type</div>
+      <div class="field-value"><span class="entry-type-badge type-${entry.type || 'default'}">${escHtml(entry.type || '—')}</span></div>
+    </div>
+    ${tags.length > 0 ? `<div class="modal-field"><div class="field-label">Tags</div><div class="field-tags">${tags.map(t => `<span>${escHtml(t)}</span>`).join('')}</div></div>` : ''}
+    <div class="modal-field">
+      <div class="field-label">Content</div>
+      <div class="content-preview">${escHtml(entry.content)}</div>
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Created</div>
+      <div class="field-value mono">${escHtml(formatFullTime(entry.created_at))}</div>
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Expires</div>
+      <div class="field-value mono">${escHtml(formatFullTime(entry.expires_at))} <span style="color:var(--text-muted);font-size:0.78rem;">(${escHtml(expiresIn)})</span></div>
+    </div>
+    <div class="modal-field">
+      <div class="field-label">TTL</div>
+      <div class="field-value mono">${escHtml(ttlDisplay)}</div>
+    </div>
+    ${entry.parent_entry ? `<div class="modal-field"><div class="field-label">Parent Entry</div><div class="field-value mono">${escHtml(entry.parent_entry)}</div></div>` : ''}
+    ${entry._score !== undefined ? `<div class="modal-field"><div class="field-label">Relevance Score</div><div class="field-value">★ ${Math.round(entry._score)}</div></div>` : ''}
+  `;
+}
+
+function closeDetailModal() {
+  document.getElementById('detailModal').classList.remove('open');
+}
+
+// ─── Write Entry ────────────────────────────────────────────────────────────────
+
+function openWriteModal() {
+  document.getElementById('writeModal').classList.add('open');
+  document.getElementById('writeContent').focus();
+}
+
+function closeWriteModal() {
+  document.getElementById('writeModal').classList.remove('open');
+}
+
+async function submitWrite(e) {
+  e.preventDefault();
+  const btn = document.getElementById('writeSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Writing…';
+
+  const agent_id = document.getElementById('writeAgent').value.trim();
+  const type = document.getElementById('writeType').value;
+  const tagsRaw = document.getElementById('writeTags').value.trim();
+  const ttlRaw = document.getElementById('writeTTL').value.trim();
+  const content = document.getElementById('writeContent').value.trim();
+
+  if (!content) {
+    toast('Content is required', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Write Entry';
+    return;
+  }
+
+  const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const body = { agent_id, type, tags, content };
+  if (ttlRaw) body.ttl_seconds = parseInt(ttlRaw, 10);
+
+  try {
+    const result = await apiPost('/write', body);
+    toast(`Entry written: ${result.entry_id}`, 'success');
+    closeWriteModal();
+    document.getElementById('writeContent').value = '';
+    document.getElementById('writeTags').value = '';
+    document.getElementById('writeTTL').value = '';
+    // Refresh everything
+    await loadTimeline();
+    await updateStats();
+  } catch (err) {
+    toast(`Write failed: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Write Entry';
+  }
+}
+
+// ─── Connection Status ──────────────────────────────────────────────────────────
+
+function setOnline() {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot online';
+  text.textContent = 'Connected';
+}
+
+function setOffline(msg) {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot offline';
+  text.textContent = msg || 'Disconnected';
+}
+
+// ─── Refresh Loop ───────────────────────────────────────────────────────────────
+
+function startRefresh() {
+  stopRefresh();
+  refreshTimer = setInterval(() => {
+    if (!searchMode) {
+      loadTimeline();
+      updateStats();
+    }
+  }, REFRESH_INTERVAL);
+}
+
+function stopRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+}
+
+// ─── Bootstrap ──────────────────────────────────────────────────────────────────
+
+async function init() {
+  setOffline('Connecting…');
+  try {
+    await updateStats();
+    await loadTimeline();
+    setOnline();
+    startRefresh();
+  } catch (err) {
+    setOffline(err.message);
+    document.getElementById('timelineBody').innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p>Could not connect to Grid Memory server.</p>
+        <p style="font-size:0.78rem;margin-top:6px;color:var(--red);">${escHtml(err.message)}</p>
+      </div>`;
+  }
+}
+
+// ─── Utilities ──────────────────────────────────────────────────────────────────
+
+function escHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMin = Math.floor(diffMs / 60000);
+
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatFullTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+}
+
+function timeUntil(iso) {
+  if (!iso) return '—';
+  const diff = new Date(iso) - new Date();
+  if (diff <= 0) return 'expired';
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `${sec}s`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h`;
+  const days = Math.floor(hr / 24);
+  return `${days}d ${hr % 24}h`;
+}
+
+// ─── CSS animation keyframes injected ───────────────────────────────────────────
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;
+document.head.appendChild(styleSheet);
+
+// ─── Close modals on Escape ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeDetailModal();
+    closeWriteModal();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── TAB SWITCHING ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const panelMap = {
+  activity: 'panelActivity',
+  tree: 'panelTree',
+  timeline: 'panelTimeline'
+};
+
+function switchTab(tabId) {
+  // Update active tab button
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+
+  // Show/hide panels
+  Object.entries(panelMap).forEach(([key, panelId]) => {
+    const panel = document.getElementById(panelId);
+    if (panel) {
+      panel.style.display = key === tabId ? '' : 'none';
+    }
+  });
+
+  // Lifecycle hooks for each tab
+  if (tabId === 'tree') {
+    renderAgentTree();
+    startTreeRefresh();
+  } else {
+    stopTreeRefresh();
+  }
+
+  if (tabId === 'timeline') {
+    // Set default date range if not set
+    const now = new Date();
+    const startInput = document.getElementById('tlStart');
+    const endInput = document.getElementById('tlEnd');
+    if (!startInput.value) {
+      const start = new Date(now.getTime() - 3600000); // 1 hour ago
+      startInput.value = toLocalDatetime(start);
+    }
+    if (!endInput.value) {
+      endInput.value = toLocalDatetime(now);
+    }
+  }
+}
+
+function toLocalDatetime(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+
+// Attach tab switching
+// Do it after the document is ready
+function initTabBar() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchTab(btn.dataset.tab);
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── AGENT FAMILY TREE (DAG) ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let treeRefreshTimer = null;
+let treeData = null;
+let treeHoveredNode = null;
+let treeClickedEdge = null;
+// Layout state (simple force-directed with damping)
+let treeNodes = [];
+let treeEdges = [];
+let animFrameId = null;
+let treeLoaded = false;
+
+// Colors for nodes
+const NODE_COLORS = {
+  active: '#34c759',
+  inactive: '#495057',
+  border: '#272d3d',
+  label: '#e8eaed',
+  edgeActive: 'rgba(79,123,255,0.6)',
+  edgeInactive: 'rgba(39,45,61,0.5)',
+  bg: '#0b0d11'
+};
+
+function startTreeRefresh() {
+  stopTreeRefresh();
+  treeRefreshTimer = setInterval(() => {
+    if (document.getElementById('panelTree').style.display !== 'none') {
+      renderAgentTree();
+    }
+  }, 10000);
+}
+
+function stopTreeRefresh() {
+  if (treeRefreshTimer) {
+    clearInterval(treeRefreshTimer);
+    treeRefreshTimer = null;
+  }
+  if (animFrameId) {
+    cancelAnimationFrame(animFrameId);
+    animFrameId = null;
+  }
+}
+
+async function renderAgentTree() {
+  try {
+    const data = await apiGet('/query?type=handoff&max=200');
+    treeData = data;
+    const entries = data.entries || [];
+
+    // Build agent set and handoff pairs
+    const agentHandoffs = {}; // agent -> total count
+    const pairCounts = {}; // "a->b" -> count
+    const agentLastActivity = {}; // agent -> last timestamp
+
+    for (const e of entries) {
+      // Count per agent
+      if (e.agent_id) {
+        agentHandoffs[e.agent_id] = (agentHandoffs[e.agent_id] || 0) + 1;
+        const ts = e.created_at || '';
+        if (ts > (agentLastActivity[e.agent_id] || '')) {
+          agentLastActivity[e.agent_id] = ts;
+        }
+      }
+
+      // Try to extract handoff direction from content
+      // Common patterns: "handoff from researcher to builder", "researcher → builder"
+      let source = null;
+      let target = null;
+      const content = e.content || '';
+
+      // Pattern: "researcher → builder"
+      const arrowMatch = content.match(/([\w_-]+)\s*[→➡]=>\s*([\w_-]+)/);
+      if (arrowMatch) {
+        source = arrowMatch[1];
+        target = arrowMatch[2];
+      }
+
+      // Pattern: "handoff from X to Y"
+      const fromToMatch = content.match(/handoff\s+(?:from\s+)?([\w_-]+)\s+(?:to|→|➡|->)\s+([\w_-]+)/i);
+      if (fromToMatch) {
+        source = fromToMatch[1];
+        target = fromToMatch[2];
+      }
+
+      // If we have agent_id and the content contains another agent name, use that
+      // Fallback: just use the entry agent_id as a node
+      if (!source || !target) {
+        // This entry just involves this agent; we'll still count it for node size
+        continue;
+      }
+
+      const key = `${source}||${target}`;
+      pairCounts[key] = (pairCounts[key] || 0) + 1;
+
+      // Also count for source and target
+      agentHandoffs[source] = (agentHandoffs[source] || 0) + 0.5;
+      agentHandoffs[target] = (agentHandoffs[target] || 0) + 0.5;
+    }
+
+    // Also get info for agent activity timestamps
+    try {
+      const info = await apiGet('/info');
+      // Use by_agent for last activity if we can get it
+      cachedInfo = info;
+    } catch {}
+
+    // Build nodes and edges
+    const agentNames = Object.keys(agentHandoffs);
+    if (agentNames.length === 0) {
+      const canvas = document.getElementById('treeCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#5c6278';
+      ctx.font = '15px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No handoffs found', canvas.width/2, canvas.height/2);
+      return;
+    }
+
+    const now = new Date();
+    const tenMinAgo = new Date(now.getTime() - 600000).toISOString();
+
+    treeNodes = agentNames.map(name => ({
+      id: name,
+      label: name,
+      count: Math.round(agentHandoffs[name] || 0),
+      lastActive: agentLastActivity[name] || '',
+      isActive: (agentLastActivity[name] || '') >= tenMinAgo
+    }));
+
+    treeEdges = [];
+    for (const [key, count] of Object.entries(pairCounts)) {
+      const [src, tgt] = key.split('||');
+      treeEdges.push({ source: src, target: tgt, count });
+    }
+
+    document.getElementById('treeEdgeCount').textContent = `${treeEdges.length} handoffs`;
+
+    // Layout: simple circle layout with some randomization
+    const canvas = document.getElementById('treeCanvas');
+    const wrap = document.getElementById('treeCanvasWrap');
+    const dpr = window.devicePixelRatio || 1;
+    const w = wrap.clientWidth || 800;
+    const h = wrap.clientHeight || 600;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Simple circular layout
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(w, h) * 0.35;
+    const n = treeNodes.length;
+
+    treeNodes.forEach((node, i) => {
+      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+      node.x = cx + radius * Math.cos(angle);
+      node.y = cy + radius * Math.sin(angle);
+    });
+
+    treeLoaded = true;
+    drawTree(ctx, w, h);
+  } catch (err) {
+    console.error('Tree render error:', err);
+  }
+}
+
+function drawTree(ctx, w, h) {
+  ctx.clearRect(0, 0, w, h);
+
+  if (!treeNodes || treeNodes.length === 0) return;
+
+  const nodeRadiusMin = 10;
+  const nodeRadiusMax = 30;
+  const maxCount = Math.max(...treeNodes.map(n => n.count), 1);
+
+  const maxEdgeCount = Math.max(...treeEdges.map(e => e.count), 1);
+
+  // Build adjacency for edge rendering and node lookup
+  const nodeMap = {};
+  treeNodes.forEach(n => { nodeMap[n.id] = n; });
+
+  // Draw edges first (behind nodes)
+  for (const edge of treeEdges) {
+    const src = nodeMap[edge.source];
+    const tgt = nodeMap[edge.target];
+    if (!src || !tgt) continue;
+
+    const thickness = 1 + (edge.count / maxEdgeCount) * 5;
+    const alpha = 0.3 + (edge.count / maxEdgeCount) * 0.7;
+
+    ctx.beginPath();
+    ctx.moveTo(src.x, src.y);
+    ctx.lineTo(tgt.x, tgt.y);
+    ctx.strokeStyle = `rgba(79,123,255,${alpha})`;
+    ctx.lineWidth = thickness;
+    ctx.stroke();
+
+    // Draw arrowhead
+    const dx = tgt.x - src.x;
+    const dy = tgt.y - src.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    if (len > 0) {
+      const ux = dx / len;
+      const uy = dy / len;
+      const arrowSize = 8 + (edge.count / maxEdgeCount) * 4;
+      const tipX = tgt.x - ux * (nodeRadius(src, maxCount, nodeRadiusMin, nodeRadiusMax) + 2);
+      const tipY = tgt.y - uy * (nodeRadius(src, maxCount, nodeRadiusMin, nodeRadiusMax) + 2);
+
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX - ux * arrowSize + uy * arrowSize * 0.4, tipY - uy * arrowSize - ux * arrowSize * 0.4);
+      ctx.lineTo(tipX - ux * arrowSize - uy * arrowSize * 0.4, tipY - uy * arrowSize + ux * arrowSize * 0.4);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(79,123,255,${alpha})`;
+      ctx.fill();
+
+      // Edge label (count)
+      const midX = (src.x + tgt.x) / 2;
+      const midY = (src.y + tgt.y) / 2;
+      ctx.fillStyle = `rgba(156,160,176,${alpha})`;
+      ctx.font = `${10 + (edge.count / maxEdgeCount) * 3}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(edge.count, midX, midY - 4);
+    }
+  }
+
+  // Draw nodes
+  for (const node of treeNodes) {
+    const r = nodeRadius(node, maxCount, nodeRadiusMin, nodeRadiusMax);
+    const isHovered = treeHoveredNode === node.id;
+
+    // Glow for active nodes
+    if (node.isActive) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r + 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(52,199,89,0.15)';
+      ctx.fill();
+    }
+
+    // Node circle
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = node.isActive ? '#34c759' : '#495057';
+    ctx.fill();
+    ctx.strokeStyle = isHovered ? '#4f7bff' : '#272d3d';
+    ctx.lineWidth = isHovered ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#e8eaed';
+    ctx.font = (isHovered ? 'bold ' : '') + `${Math.max(10, Math.min(13, r * 0.7))}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(node.label, node.x, node.y + r + 4);
+  }
+}
+
+function nodeRadius(node, maxCount, minR, maxR) {
+  if (maxCount <= 0) return minR;
+  return minR + (node.count / maxCount) * (maxR - minR);
+}
+
+// ─── Tree mouse interaction ─────────────────────────────────────────────────────
+
+function setupTreeMouse() {
+  const canvas = document.getElementById('treeCanvas');
+  const wrap = document.getElementById('treeCanvasWrap');
+  const tooltip = document.getElementById('treeTooltip');
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!treeNodes || treeNodes.length === 0) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const maxCount = Math.max(...treeNodes.map(n => n.count), 1);
+
+    // Check node hover
+    let found = null;
+    for (const node of treeNodes) {
+      const r = nodeRadius(node, maxCount, 10, 30);
+      const dx = mx - node.x;
+      const dy = my - node.y;
+      if (dx*dx + dy*dy <= (r + 6) * (r + 6)) {
+        found = node.id;
+        break;
+      }
+    }
+
+    if (found !== treeHoveredNode) {
+      treeHoveredNode = found;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = wrap.clientWidth || 800;
+      const h = wrap.clientHeight || 600;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(dpr, dpr);
+      drawTree(ctx, w, h);
+    }
+
+    if (found) {
+      const node = treeNodes.find(n => n.id === found);
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX - wrap.getBoundingClientRect().left + 14) + 'px';
+      tooltip.style.top = (e.clientY - wrap.getBoundingClientRect().top - 10) + 'px';
+      const lastActiveStr = node.lastActive ? formatTime(node.lastActive) : '—';
+      tooltip.innerHTML = `
+        <div class="tt-name">@${escHtml(node.id)}</div>
+        <div class="tt-stat">Handoffs: ${node.count}</div>
+        <div class="tt-stat">Status: ${node.isActive ? '🟢 Active' : '⚫ Inactive'}</div>
+        <div class="tt-stat">Last activity: ${lastActiveStr}</div>
+      `;
+    } else {
+      tooltip.style.display = 'none';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    treeHoveredNode = null;
+    tooltip.style.display = 'none';
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const w = wrap.clientWidth || 800;
+    const h = wrap.clientHeight || 600;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
+    drawTree(ctx, w, h);
+  });
+
+  // Click on edge shows entries
+  canvas.addEventListener('click', (e) => {
+    if (!treeData || !treeEdges) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    const maxEdgeCount = Math.max(...treeEdges.map(edge => edge.count), 1);
+    const nodeMap = {};
+    treeNodes.forEach(n => { nodeMap[n.id] = n; });
+
+    // Check if clicking near an edge midpoint
+    for (const edge of treeEdges) {
+      const src = nodeMap[edge.source];
+      const tgt = nodeMap[edge.target];
+      if (!src || !tgt) continue;
+
+      const midX = (src.x + tgt.x) / 2;
+      const midY = (src.y + tgt.y) / 2;
+      const dx = cx - midX;
+      const dy = cy - midY;
+
+      if (dx*dx + dy*dy < 400) { // 20px radius
+        // Show the handoff entries that make up this edge
+        showEdgeEntries(edge.source, edge.target);
+        return;
+      }
+    }
+  });
+}
+
+function showEdgeEntries(source, target) {
+  const entries = (treeData.entries || []).filter(e => {
+    const content = e.content || '';
+    // Match if the content references both agents in a handoff
+    const hasSource = content.includes(source);
+    const hasTarget = content.includes(target);
+    return hasSource && hasTarget && e.type === 'handoff';
+  });
+
+  if (entries.length === 0) {
+    toast('No matching handoff entries found', 'info');
+    return;
+  }
+
+  // Show modal with these entries
+  const modal = document.getElementById('detailModal');
+  const title = document.getElementById('detailTitle');
+  const body = document.getElementById('detailBody');
+
+  modal.classList.add('open');
+  title.textContent = `Handoffs: ${source} → ${target}`;
+  body.innerHTML = entries.map(e => `
+    <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span class="entry-type-badge type-handoff">handoff</span>
+        <span class="entry-agent">@${escHtml(e.agent_id || '?')}</span>
+        <span class="entry-time" style="margin-left:auto;font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono);">${formatTime(e.created_at)}</span>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text-secondary);">${escHtml(e.content)}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── TIME TRAVEL PLAYBACK ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let playbackEntries = [];
+let playbackIndex = 0;
+let playbackPlaying = false;
+let playbackTimer = null;
+
+async function loadTimelinePlayback() {
+  stopPlayback();
+  const startInput = document.getElementById('tlStart');
+  const endInput = document.getElementById('tlEnd');
+  const loadBtn = document.getElementById('tlLoadBtn');
+  const playBtn = document.getElementById('tlPlayBtn');
+
+  const startVal = startInput.value;
+  const endVal = endInput.value;
+
+  if (!startVal || !endVal) {
+    toast('Please set both start and end times', 'error');
+    return;
+  }
+
+  const since = new Date(startVal).toISOString();
+  const before = new Date(endVal).toISOString();
+
+  loadBtn.disabled = true;
+  loadBtn.textContent = 'Loading…';
+
+  try {
+    const data = await apiGet(`/query?max=200&since=${encodeURIComponent(since)}&before=${encodeURIComponent(before)}`);
+    const entries = data.entries || [];
+
+    // Sort chronologically
+    playbackEntries = entries.sort((a, b) => {
+      const at = a.created_at || '';
+      const bt = b.created_at || '';
+      return at.localeCompare(bt);
+    });
+
+    playbackIndex = 0;
+
+    const body = document.getElementById('playbackBody');
+    if (playbackEntries.length === 0) {
+      body.innerHTML = '<div class="empty-state"><p>No entries in this time range</p></div>';
+      document.getElementById('playbackCounter').textContent = '0 / 0';
+      playBtn.disabled = true;
+    } else {
+      body.innerHTML = '';
+      document.getElementById('playbackCounter').textContent = `0 / ${playbackEntries.length}`;
+      playBtn.disabled = false;
+    }
+
+    document.getElementById('playbackProgressBar').style.width = '0%';
+    toast(`Loaded ${playbackEntries.length} entries`, 'success');
+  } catch (err) {
+    toast(`Load failed: ${err.message}`, 'error');
+    console.error(err);
+  } finally {
+    loadBtn.disabled = false;
+    loadBtn.textContent = 'Load';
+  }
+}
+
+function togglePlayback() {
+  const btn = document.getElementById('tlPlayBtn');
+
+  if (playbackPlaying) {
+    stopPlayback();
+    btn.textContent = '▶ Play';
+    btn.className = 'btn-green';
+  } else {
+    if (playbackIndex >= playbackEntries.length) {
+      playbackIndex = 0;
+      const body = document.getElementById('playbackBody');
+      body.innerHTML = '';
+    }
+    playbackPlaying = true;
+    btn.textContent = '⏸ Pause';
+    btn.className = 'btn-primary';
+    playNextEntry();
+  }
+}
+
+function stopPlayback() {
+  playbackPlaying = false;
+  if (playbackTimer) {
+    clearTimeout(playbackTimer);
+    playbackTimer = null;
+  }
+}
+
+function playNextEntry() {
+  if (!playbackPlaying) return;
+  if (playbackIndex >= playbackEntries.length) {
+    stopPlayback();
+    const btn = document.getElementById('tlPlayBtn');
+    btn.textContent = '▶ Play';
+    btn.className = 'btn-green';
+    toast('Playback complete', 'info');
+    return;
+  }
+
+  const entry = playbackEntries[playbackIndex];
+  const body = document.getElementById('playbackBody');
+  const speed = parseInt(document.getElementById('tlSpeed').value, 10);
+
+  // Create entry card
+  const card = document.createElement('div');
+  card.className = 'playback-entry';
+
+  const typeClass = `type-${entry.type || 'default'}`;
+  const tags = (entry.tags || []).filter(Boolean);
+
+  card.innerHTML = `
+    <div class="pe-time">
+      <span class="pe-index">#${playbackIndex + 1}</span>
+      ${escHtml(formatFullTime(entry.created_at))}
+    </div>
+    <div class="pe-head">
+      <span class="entry-type-badge ${typeClass}">${escHtml(entry.type || '—')}</span>
+      <span class="entry-agent">@${escHtml(entry.agent_id || '?')}</span>
+    </div>
+    ${tags.length > 0 ? `<div class="entry-tags" style="margin-bottom:4px;">${tags.map(t => `<span class="entry-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
+    <div class="pe-content">${escHtml(entry.content)}</div>
+  `;
+
+  body.appendChild(card);
+
+  // Trigger fade-in on next frame
+  requestAnimationFrame(() => {
+    card.classList.add('visible');
+  });
+
+  // Scroll to show the new card
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Update progress
+  playbackIndex++;
+  document.getElementById('playbackCounter').textContent = `${playbackIndex} / ${playbackEntries.length}`;
+  document.getElementById('playbackProgressBar').style.width = `${(playbackIndex / playbackEntries.length) * 100}%`;
+
+  // Schedule next
+  const baseDelay = 1500; // ms per entry at 1x
+  const delay = Math.max(200, baseDelay / speed);
+  playbackTimer = setTimeout(playNextEntry, delay);
+}
+
+// Handle speed change while playing
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'tlSpeed' && playbackPlaying) {
+    // Restart timer with new speed
+    clearTimeout(playbackTimer);
+    playbackTimer = setTimeout(playNextEntry, Math.max(200, 1500 / parseInt(e.target.value, 10)));
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── TREE/TIMELINE INIT ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── Init ───────────────────────────────────────────────────────────────────────
+init();
+
+// Tab bar and tree interaction init after DOM ready
+setTimeout(() => {
+  initTabBar();
+  setupTreeMouse();
+
+  // Resize handler for tree canvas
+  window.addEventListener('resize', () => {
+    if (treeLoaded && document.getElementById('panelTree').style.display !== 'none') {
+      renderAgentTree();
+    }
+  // ── Wizard / Getting Started ──
+function showWizard() {
+  setupGridInfo().then(info => {
+    const hasData = info.total_entries > 0;
+    const steps = [
+      { name: '🌱 Seed Demo Data', done: hasData, endpoint: '/seed', method: 'POST' },
+      { name: '📋 Auto-Generate Contracts', done: false, endpoint: '/auto-contracts', method: 'GET' },
+      { name: '🔗 Connect a Federated Peer', done: false, action: 'federation' },
+      { name: '📖 View Documentation', done: false, url: '/dashboard/docs' },
+    ];
+    
+    let html = '<div class="wizard-overlay" onclick="this.remove()">' +
+      '<div class="wizard-dialog" onclick="event.stopPropagation()">' +
+      '<h2>🚀 Grid Memory — Getting Started</h2>' +
+      '<p style="margin:10px 0 20px;color:#8892b0;">Your Grid is running. Here\'s what to do next:</p>' +
+      '<div class="wizard-steps">';
+    
+    steps.forEach((step, i) => {
+      const status = step.done ? '✅' : '⬜';
+      html += '<div class="wizard-step" style="padding:12px;margin:8px 0;background:#1a1d2e;border-radius:8px;cursor:pointer;" onclick="';
+      if (step.done) html += 'alert(\'Already completed\')';
+      else if (step.endpoint) html += 'runAction(\'' + step.endpoint + '\',\'' + step.method + '\')';
+      else if (step.action === 'federation') html += 'showFederationDialog()';
+      else if (step.url) html += 'window.open(\'' + step.url + '\')';
+      html += '">';
+      html += '<span style="margin-right:10px;">' + status + '</span>';
+      html += '<strong>' + step.name + '</strong>';
+      html += '</div>';
+    });
+    
+    html += '</div></div></div>';
+    
+    const existing = document.querySelector('.wizard-overlay');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', html);
+  });
+}
+
+// Add getting started panel to sidebar (injected once on load)
+function addWizardToSidebar() {
+  const panels = document.querySelector('.sidebar-panels');
+  if (!panels || document.getElementById('wizardPanel')) return;
+  const div = document.createElement('div');
+  div.className = 'sidebar-panel';
+  div.id = 'wizardPanel';
+  div.innerHTML = '<div class="panel-header">🚀 Getting Started</div>' +
+    '<div class="panel-body">' +
+    '<p style="padding:10px;font-size:13px;color:#8892b0;">Setup wizard to seed data, generate contracts, and connect peers.</p>' +
+    '<button onclick="showWizard()" style="display:block;width:calc(100% - 20px);margin:10px;padding:8px 12px;">' +
+    'Open Wizard</button>' +
+    '</div>';
+  panels.prepend(div);
+}
+
+function runAction(endpoint, method) {
+  const btn = event?.target || document.querySelector('.wizard-step:active');
+  if (btn) btn.style.opacity = '0.5';
+  
+  fetch(endpoint, { method }).then(r => r.json()).then(data => {
+    const msg = data.seeded ? 'Seeded ' + data.entry_count + ' entries!' :
+                data.suggestions ? 'Found ' + data.total + ' contract suggestions' :
+                JSON.stringify(data).slice(0, 100);
+    alert('✅ ' + msg);
+    if (btn) btn.style.opacity = '1';
+    location.reload();
+  }).catch(e => {
+    alert('❌ Error: ' + e.message);
+    if (btn) btn.style.opacity = '1';
+  });
+}
+
+function showFederationDialog() {
+  const url = prompt('Enter peer Grid URL (e.g. http://peer:8080):');
+  if (!url) return;
+  const trustLevel = prompt('Trust level (verified/unverified/quarantine):', 'unverified');
+  if (!trustLevel) return;
+  fetch('/federation/peers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, trustLevel }),
+  }).then(r => r.json()).then(d => {
+    alert(d.registered ? '✅ Peer registered!' : '❌ Failed: ' + (d.error || JSON.stringify(d)));
+  });
+}
+
+// Inject wizard after dashboard loads
+setTimeout(addWizardToSidebar, 500);
+});
+}, 0);
+</script>
+</body>
+</html>

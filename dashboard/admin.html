@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Memory — Admin Console</title>
+<style>
+  :root { --bg: #0b0d11; --bg2: #13161c; --card: #1a1e28; --border: #272d3d; --text: #e8eaed; --text2: #9aa0b0; --accent: #4f7bff; --green: #34d399; --yellow: #fbbf24; --red: #f87171; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .card .v { font-size: 1.6rem; font-weight: 600; }
+  .card .l { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; color: var(--text2); border-bottom: 1px solid var(--border); padding: 8px 4px; }
+  td { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; }
+  .badge.green { background: #065f46; color: var(--green); }
+  .badge.red { background: #7f1d1d; color: var(--red); }
+  .badge.yellow { background: #78350f; color: var(--yellow); }
+  @media (max-width:768px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="header"><h1>Grid Memory — Admin Console</h1><span id="status" style="font-size:0.8rem;color:var(--text2)">Loading...</span></div>
+<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+  <input id="authKey" placeholder="API Key (required when auth enabled)" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-size:0.8rem;width:250px" />
+  <input id="authWs" placeholder="Workspace (leave blank for all)" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-size:0.8rem;width:180px" />
+  <button onclick="saveAuth()" style="background:var(--accent);color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem">Save</button>
+  <span id="authStatus" style="font-size:0.75rem;color:var(--text2)"></span>
+</div>
+<div class="stats-grid" id="stats"></div>
+<div class="grid-2">
+  <div class="card" id="keysCard"><div class="l">API Keys</div><div id="keysContent">Loading...</div></div>
+  <div class="card" id="tenantsCard"><div class="l">Tenants</div><div id="tenantsContent">Loading...</div></div>
+</div>
+<div class="card" id="auditCard"><div class="l">Recent Audit Events</div><div id="auditContent">Loading...</div></div>
+<script>
+function _gridHeaders() {
+  const h = {};
+  const k = localStorage.getItem('grid_api_key') || document.getElementById('authKey')?.value || '';
+  const w = localStorage.getItem('grid_workspace') || document.getElementById('authWs')?.value || '';
+  if (k) h['Authorization'] = 'Bearer ' + k;
+  if (w) h['X-Grid-Workspace'] = w;
+  return h;
+}
+function saveAuth() {
+  const k = document.getElementById('authKey').value;
+  const w = document.getElementById('authWs').value;
+  if (k) localStorage.setItem('grid_api_key', k); else localStorage.removeItem('grid_api_key');
+  if (w) localStorage.setItem('grid_workspace', w); else localStorage.removeItem('grid_workspace');
+  document.getElementById('authStatus').textContent = 'Saved';
+  setTimeout(() => document.getElementById('authStatus').textContent = '', 2000);
+  refresh();
+}
+async function fetchApi(path) {
+  const r = await fetch(path, { headers: _gridHeaders() });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+async function refresh() {
+  document.getElementById('status').textContent = 'Updating...';
+  try {
+    const [info, keys, tenants, audit] = await Promise.all([
+      fetchApi('/info').catch(() => null),
+      fetchApi('/gateway/keys').catch(() => ({ keys: [] })),
+      fetchApi('/gateway/tenants').catch(() => null),
+      fetchApi('/gateway/audit').catch(() => ({ entries: [] })),
+    ]);
+    if (info) document.getElementById('stats').innerHTML = `
+      <div class="card"><div class="l">Entries</div><div class="v">${info.total_entries||0}</div></div>
+      <div class="card"><div class="l">Active</div><div class="v">${info.alive_entries||0}</div></div>
+      <div class="card"><div class="l">Agents</div><div class="v">${info.unique_agents||0}</div></div>
+      <div class="card"><div class="l">Tags</div><div class="v">${info.unique_tags||0}</div></div>`;
+    if (keys.keys) document.getElementById('keysContent').innerHTML = `
+      <table><tr><th>ID</th><th>Permission</th><th>Status</th></tr>
+      ${keys.keys.slice(0,10).map(k => `<tr><td>${(k.key_id||'').slice(0,16)}</td><td>${k.permission}</td><td><span class="badge ${k.enabled?'green':'red'}">${k.enabled?'Active':'Revoked'}</span></td></tr>`).join('')}
+      </table>`;
+    if (tenants) document.getElementById('tenantsContent').innerHTML = `
+      <div style="padding:8px 0">Total: ${tenants.total || 0}</div>`;
+    if (audit.entries) document.getElementById('auditContent').innerHTML = `
+      <table><tr><th>Time</th><th>Action</th><th>Result</th><th>Actor</th></tr>
+      ${audit.entries.slice(0,15).map(e => `<tr><td>${(e.timestamp||'').slice(11,19)}</td><td>${e.action}</td><td><span class="badge ${e.result==='allowed'?'green':'red'}">${e.result}</span></td><td>${(e.actor||'').slice(0,12)}</td></tr>`).join('')}
+      </table>`;
+    document.getElementById('status').textContent = 'Live';
+  } catch(e) { document.getElementById('status').textContent = 'Error: ' + e.message; }
+}
+// Load saved auth on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const k = localStorage.getItem('grid_api_key');
+  const w = localStorage.getItem('grid_workspace');
+  if (k && document.getElementById('authKey')) document.getElementById('authKey').value = k;
+  if (w && document.getElementById('authWs')) document.getElementById('authWs').value = w;
+});
+refresh();
+setInterval(refresh, 15000);
+</script>
+</body>
+</html>

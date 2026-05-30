@@ -1,0 +1,28 @@
+{
+  "peers": [
+    {
+      "url": "http://register-peer:8080",
+      "trustLevel": "verified",
+      "trustScore": 80,
+      "registered_at": "2026-05-29T17:36:08.142Z",
+      "updated_at": "2026-05-29T17:37:49.238Z",
+      "last_synced_at": null
+    },
+    {
+      "url": "http://list-test-b:8080",
+      "trustLevel": "unverified",
+      "trustScore": 40,
+      "registered_at": "2026-05-29T17:36:08.164Z",
+      "updated_at": "2026-05-29T17:37:49.284Z",
+      "last_synced_at": null
+    },
+    {
+      "url": "http://trust-test:8080",
+      "trustLevel": "verified",
+      "trustScore": 80,
+      "registered_at": "2026-05-29T17:36:08.173Z",
+      "updated_at": "2026-05-29T17:37:49.316Z",
+      "last_synced_at": null
+    }
+  ]
+}

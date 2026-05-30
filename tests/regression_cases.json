@@ -1,0 +1,99 @@
+[
+  {
+    "id": "reg-001",
+    "description": "Basic write-read roundtrip",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "hello", "type": "observation", "tags": ["t1"] } },
+      { "action": "read", "payload": { "tags": ["t1"] }, "expect": { "entry_count": 1, "content_match": "hello" } }
+    ]
+  },
+  {
+    "id": "reg-002",
+    "description": "TTL expiry exclusion",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "expire me", "type": "observation", "tags": ["ttl"], "ttl_seconds": 1 } },
+      { "action": "wait_ms", "value": 1500 },
+      { "action": "read", "payload": { "tags": ["ttl"] }, "expect": { "entry_count": 0 } }
+    ]
+  },
+  {
+    "id": "reg-003",
+    "description": "Multiple tag AND filtering",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "entry a", "tags": ["x", "y"], "type": "observation" } },
+      { "action": "write", "payload": { "agent_id": "a1", "content": "entry b", "tags": ["x"], "type": "observation" } },
+      { "action": "write", "payload": { "agent_id": "a1", "content": "entry c", "tags": ["y"], "type": "observation" } },
+      { "action": "read", "payload": { "tags": ["x", "y"], "tagMode": "AND" }, "expect": { "entry_count": 1, "content_match": "entry a" } },
+      { "action": "read", "payload": { "tags": ["x", "y"], "tagMode": "OR" }, "expect": { "entry_count": 3 } }
+    ]
+  },
+  {
+    "id": "reg-004",
+    "description": "Relevance scoring: multi-tag entries ranked first",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "both tags", "tags": ["db", "auth"], "type": "observation" } },
+      { "action": "write", "payload": { "agent_id": "a1", "content": "one tag", "tags": ["db"], "type": "observation" } },
+      { "action": "read", "payload": { "tags": ["db", "auth"] }, "expect": { "first_content": "both tags" } }
+    ]
+  },
+  {
+    "id": "reg-005",
+    "description": "Prune removes expired and reports correctly",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "alive", "tags": ["p"], "type": "observation", "ttl_seconds": 86400 } },
+      { "action": "write", "payload": { "agent_id": "a1", "content": "dead", "tags": ["p"], "type": "observation", "ttl_seconds": 1 } },
+      { "action": "wait_ms", "value": 1500 },
+      { "action": "prune", "expect": { "removed": 1, "remaining": 1 } }
+    ]
+  },
+  {
+    "id": "reg-006",
+    "description": "Rejection of empty agent_id",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "", "content": "test" }, "expect_error": "agent_id is required" }
+    ]
+  },
+  {
+    "id": "reg-007",
+    "description": "Rejection of invalid type",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "test", "type": "madeup" }, "expect_error": "Invalid type" }
+    ]
+  },
+  {
+    "id": "reg-008",
+    "description": "Forget removes specific entry by ID",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "to remove", "tags": ["x"], "type": "observation" }, "capture_id": "entry_id" },
+      { "action": "forget", "payload_ref": "entry_id", "expect": { "found": true } },
+      { "action": "read", "payload": { "tags": ["x"] }, "expect": { "entry_count": 0 } }
+    ]
+  },
+  {
+    "id": "reg-009",
+    "description": "Corruption recovery",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "before corruption", "tags": ["x"], "type": "observation" } },
+      { "action": "corrupt_store", "payload": {} },
+      { "action": "info", "expect": { "has_recovery_flag": true } }
+    ]
+  },
+  {
+    "id": "reg-010",
+    "description": "Content never truncated on write",
+    "setup": { "wipe": true },
+    "steps": [
+      { "action": "write", "payload": { "agent_id": "a1", "content": "A".repeat(10000), "tags": ["big"], "type": "observation" } },
+      { "action": "read", "payload": { "tags": ["big"] }, "expect": { "entry_count": 1 } }
+    ]
+  }
+]
