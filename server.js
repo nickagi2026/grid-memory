@@ -144,14 +144,13 @@ function mikeRequired(handler) {
     if (!mikeDashboard) {
       res.writeHead(402, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({
-        error: 'MIKE Intelligence is a commercial feature.',
-        description: 'The executive dashboard, QBR generator, and portfolio analytics require Grid Enterprise.',
-        upgrade: 'https://gridmemory.io/enterprise',
+        error: 'MIKE Intelligence requires an upgrade.',
+        upgrade: 'https://gridmemory.io/mike',
+        contact: 'nick@criticalpathfoundry.com',
         free_features: [
           '/amnesia/detect — always free',
           '/decisions/graph — always free',
-          '/decisions/stats — always free',
-          '/roi — developer metrics always free',
+          '/roi — always free',
         ],
       }));
     }

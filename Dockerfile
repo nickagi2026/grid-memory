@@ -15,11 +15,16 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy only what's needed — zero npm dependencies
+# Copy all community modules
 COPY package.json .
-COPY reference/store.js ./reference/store.js
-COPY server.js .
-COPY openai-proxy.js .
+COPY server.js gateway.js route-registry.js governance-db.js .
+COPY openai-proxy.js embeddings.js .
+COPY contracts.js constitution.js federation.js subscriptions.js .
+COPY seed-mode.js setup-wizard.js instant-roi.js .
+COPY explain.js cascade.js conflicts.js deduplication.js .
+COPY dreaming.js provenance.js reputation.js staleness.js .
+COPY amnesia-detector.js decision-graph.js auto-contract.js .
+COPY reference/ ./reference/
 
 EXPOSE 8080
 
