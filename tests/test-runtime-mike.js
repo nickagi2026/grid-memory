@@ -59,7 +59,8 @@ async function waitForServer(url, retries = 10) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await httpGet(url + '/health');
-      if (res.status === 200) return true;
+      // /health may return 200 (no auth) or 401 (auth enabled) — either means server is up
+      if (res.status === 200 || res.status === 401) return true;
     } catch (e) { /* server not ready yet */ }
     await new Promise(r => setTimeout(r, 300));
   }

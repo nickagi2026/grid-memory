@@ -12,6 +12,14 @@ Grid Memory runs on **Node.js 18+**. Python 3.8+ is optional (for the SDK).
 ## Quick Start (Node.js)
 
 ```bash
+
+> **Package Status:**
+> - **npm**: ✅ Published — `npm install grid-memory`
+> - **PyPI**: ⏳ Pending
+> - **Docker**: ⏳ Pending
+> - **Enterprise (MIKE + Connectors + Semantic Search)**: 🔒 Private — contact nick@criticalpathfoundry.com
+
+
 # Clone or copy the Grid directory
 git clone <repo-url> grid-memory
 cd grid-memory

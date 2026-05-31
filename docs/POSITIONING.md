@@ -53,4 +53,4 @@ Three findings define the 2026 frontier:
 
 ## Current Version
 
-**v82** (2026-05-30) — The first version that feels like a real product.
+**1.2.1** (2026-05-30) — The first version that feels like a real product.

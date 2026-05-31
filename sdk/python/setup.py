@@ -5,7 +5,7 @@ with open("README.md") as f:
 
 setup(
     name="grid-memory",
-    version="1.2.0",
+    version="1.2.1",
     description="Grid Memory — shared persistent memory for multi-agent teams",
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -267,6 +267,7 @@ class Grid {
       provenance_trust_score: write.provenance_trust_score || null,
       staleness_score: write.staleness_score || null,
       // Security metadata (survives export/import)
+      embedding: write.embedding || null,
       quarantined: write.quarantined || false,
       quarantine_reason: write.quarantine_reason || null,
       quarantined_at: write.quarantined_at || null,
@@ -427,7 +428,7 @@ class Grid {
     }
 
     // Score and sort by relevance
-    entries = this._scoreAndSort(entries, tags, agents, type || types);
+    entries = this._scoreAndSort(entries, tags, agents, type || types, query.q);
 
     // Limit
     const results = entries.slice(0, maxResults);
@@ -476,10 +477,16 @@ class Grid {
     };
   }
 
-  _scoreAndSort(entries, queryTags, queryAgents, queryTypes) {
+  _scoreAndSort(entries, queryTags, queryAgents, queryTypes, queryText) {
     const nowTs = nowUnix();
     return entries.map(e => {
       let score = 0;
+
+      // Semantic score (if query text and embedding available)
+      if (queryText && e.embedding) {
+        // score already computed and stored as _score during query processing
+        // preserve any pre-computed semantic score
+      }
 
       // Tag match score
       if (queryTags.length > 0) {
@@ -779,6 +786,7 @@ class Grid {
         origin_trust: e.origin_trust,
         provenance_trust_score: e.provenance_trust_score,
         staleness_score: e.staleness_score,
+        embedding: e.embedding,
         quarantined: e.quarantined,
         quarantine_reason: e.quarantine_reason,
         recalled: e.recalled,

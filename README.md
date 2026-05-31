@@ -23,16 +23,23 @@ pip install -e .
 
 ## What's Free
 
-| Feature | Community |
-|---------|-----------|
-| Memory Engine (write, read, inject, TTL) | ✓ Free |
-| Conflict Detection | ✓ Free |
-| Amnesia Detection | ✓ Free |
-| Decision Graph | ✓ Free |
-| Developer ROI metrics | ✓ Free |
-| Governance (contracts, constitutions) | ✓ Free |
-| Federation | ✓ Free |
-| OpenAI-compatible proxy | ✓ Free |
+| Feature | Community | Enterprise |
+|---------|-----------|------------|
+| Memory Engine (write, read, inject, TTL) | ✓ Free | ✓ |
+| Conflict Detection | ✓ Free | ✓ |
+| Amnesia Detection | ✓ Free | ✓ |
+| Decision Graph | ✓ Free | ✓ |
+| Developer ROI metrics | ✓ Free | ✓ |
+| Governance (contracts, constitutions) | ✓ Free | ✓ |
+| Federation | ✓ Free | ✓ |
+| OpenAI-compatible proxy | ✓ Free | ✓ |
+| **Executive Dashboard** | — (returns 402) | ✓ MIKE |
+| **QBR Generator** | — (returns 402) | ✓ MIKE |
+| **Portfolio Analytics** | — (returns 402) | ✓ MIKE |
+| Semantic Search | — | ✓ Enterprise |
+| Native Connectors | — | ✓ Enterprise |
+| SSO / SAML | — | ✓ Enterprise |
+| PostgreSQL Backend | — | ✓ Enterprise |
 
 ## What's Enterprise
 
@@ -90,6 +97,14 @@ Business intelligence derived from your organization's memory.
 ## Quick Start
 
 ```bash
+
+> **Package Status:**
+> - **npm**: ✅ Published — `npm install grid-memory`
+> - **PyPI**: ⏳ Pending
+> - **Docker**: ⏳ Pending
+> - **Enterprise (MIKE + Connectors + Semantic Search)**: 🔒 Private — contact nick@criticalpathfoundry.com
+
+
 # Start the server
 cd grid-memory
 node server.js

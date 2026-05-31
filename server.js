@@ -728,9 +728,20 @@ async function handle(req, res) {
         }
       }
 
-      // Add workspace tag for isolation (tags and workspace are already declared above)
+      // Add workspace tag for isolation
       if (workspace && !tags.includes(`ws:${workspace}`)) {
         tags.push(`ws:${workspace}`);
+      }
+
+      // Generate embedding for semantic search (optional)
+      let embedding = null;
+      if (body.content && process.env.GRID_EMBEDDING_API_KEY) {
+        try {
+          const { embed } = require('./embeddings.js');
+          embedding = await embed(body.content).catch(() => null);
+        } catch (e) {
+          // Embedding unavailable — falls back to tag matching
+        }
       }
 
       const result = await grid.write({
@@ -738,6 +749,7 @@ async function handle(req, res) {
         type: body.type || 'observation',
         tags: tags,
         content: body.content,
+        embedding: embedding,
         ttl_seconds: body.ttl_seconds,
         session_id: body.session_id,
         parent_entry: body.parent_entry,
@@ -762,6 +774,7 @@ async function handle(req, res) {
     if (method === 'GET' && url === '/query') {
       const workspace = getWorkspace(req);
       const queryTags = query.tags ? query.tags.split(',').filter(Boolean) : [];
+      const queryText = query.q || null;  // semantic search query
 
       // Auto-filter by workspace when header is present
       if (workspace && !queryTags.includes(`ws:${workspace}`)) {
@@ -778,7 +791,8 @@ async function handle(req, res) {
         max: query.max ? parseInt(query.max, 10) : undefined,
         since: query.since || null,
         before: query.before || null,
-        tagMode: hasWorkspace ? 'AND' : (query.tagMode || 'OR')
+        tagMode: hasWorkspace ? 'AND' : (query.tagMode || 'OR'),
+        q: queryText,
       });
       return json(res, result);
     }

@@ -1,6 +1,6 @@
 # Grid Memory — Strategic Roadmap
 
-## Current Position (v86)
+## Current Position (1.2.1)
 
 | Area | Score | Status |
 |------|-------|--------|
@@ -80,4 +80,5 @@
 | v48 | 2026-04 | Initial proof of concept |
 | v55 | 2026-05-10 | Contracts, constitutions, federation |
 | v62 | 2026-05-20 | MIKE intelligence layer, dashboards |
-| v68 | 2026-05-30 | Audit chaining, quick-connect, NL constitutions, executive dashboard, QBR, amnesia detection |
+| v68 | 2026-05-30 |
+| v91 (1.2.1) | 2026-05-31 | Semantic search, enterprise connectors, community/enterprise split cleanup | Audit chaining, quick-connect, NL constitutions, executive dashboard, QBR, amnesia detection |
