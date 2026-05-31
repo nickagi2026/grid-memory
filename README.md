@@ -100,7 +100,7 @@ Business intelligence derived from your organization's memory.
 
 > **Package Status:**
 > - **npm**: ✅ Published — `npm install grid-memory`
-> - **PyPI**: ⏳ Pending
+> - **PyPI**: ✅ Published — `pip install grid-memory`
 > - **Docker**: ⏳ Pending
 > - **Enterprise (MIKE + Connectors + Semantic Search)**: 🔒 Private — contact nick@criticalpathfoundry.com
 
