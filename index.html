@@ -1,0 +1,619 @@
+
+<h2 class="sr-only">Grid Memory landing page — marketing site for shared agent memory infrastructure</h2>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap');
+  #gm-root{font-family:'DM Sans',sans-serif;background:#07080b;color:#dde2ef;line-height:1.6;overflow-x:hidden;}
+  #gm-root *{box-sizing:border-box;margin:0;padding:0;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+  .gm-nav{background:#07080bee;backdrop-filter:blur(12px);border-bottom:1px solid #252836;padding:12px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+  .gm-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;}
+  .gm-nav-links{display:flex;gap:24px;align-items:center;}
+  .gm-nav-links a{color:#757c99;font-size:13px;text-decoration:none;}
+  .gm-nav-links a:hover{color:#dde2ef;}
+  .gm-btn-sm{background:rgba(200,164,80,.12);border:1px solid #7a5e28;color:#e4be72;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;}
+  .gm-hero{position:relative;padding:80px 32px 60px;overflow:hidden;}
+  .gm-hero-art{position:absolute;top:-40px;right:-20px;pointer-events:none;opacity:1;}
+  .gm-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(200,164,80,.08);border:1px solid #7a5e28;border-radius:20px;padding:5px 14px;margin-bottom:24px;}
+  .gm-badge span{font-family:'JetBrains Mono',monospace;font-size:11px;color:#c8a450;letter-spacing:.1em;}
+  .gm-pulse{width:6px;height:6px;border-radius:50%;background:#3ec98a;animation:pulse 2s ease infinite;}
+  h1.gm-headline{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.4rem);font-weight:900;line-height:1.06;letter-spacing:-.02em;margin-bottom:20px;}
+  .gm-sub{font-size:16px;color:#757c99;max-width:500px;margin-bottom:32px;line-height:1.7;}
+  .gm-install{display:flex;align-items:center;gap:10px;background:#16181f;border:1px solid #252836;border-radius:7px;padding:11px 16px;max-width:400px;margin-bottom:10px;}
+  .gm-install code{color:#e4be72;font-family:'JetBrains Mono',monospace;font-size:13px;flex:1;}
+  .gm-install .gm-dollar{color:#3ec98a;font-family:monospace;}
+  .gm-copy{background:rgba(200,164,80,.1);border:1px solid #7a5e28;color:#e4be72;border-radius:5px;padding:3px 10px;font-size:11px;font-family:monospace;cursor:pointer;transition:all .2s;}
+  .gm-copy.ok{background:rgba(62,201,138,.15);border-color:#3ec98a;color:#3ec98a;}
+  .gm-ctas{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .gm-cta-primary{background:#c8a450;color:#07080b;border-radius:7px;padding:10px 22px;font-size:14px;font-weight:700;text-decoration:none;border:none;cursor:pointer;}
+  .gm-cta-secondary{background:transparent;border:1px solid #252836;color:#dde2ef;border-radius:7px;padding:10px 22px;font-size:14px;text-decoration:none;}
+  .gm-section{max-width:1100px;margin:0 auto;padding:60px 32px;}
+  .gm-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .gm-eyebrow-line{height:1px;width:28px;background:#c8a450;opacity:.6;}
+  .gm-eyebrow-line2{height:1px;flex:1;background:linear-gradient(90deg,#c8a45066,transparent);}
+  .gm-eyebrow-text{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c8a450;}
+  h2.gm-sh{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;line-height:1.15;margin-bottom:12px;}
+  .gm-stats{display:flex;gap:10px;flex-wrap:wrap;}
+  .gm-stat{flex:1 1 130px;background:#16181f;border:1px solid #252836;border-radius:7px;padding:16px;text-align:center;}
+  .gm-stat-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:#e4be72;}
+  .gm-stat-lbl{font-size:10px;color:#757c99;text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+  .gm-cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:32px;}
+  .gm-card{background:#16181f;border:1px solid #252836;border-radius:8px;padding:22px;}
+  .gm-card-icon{font-size:18px;margin-bottom:10px;}
+  .gm-card h3{font-size:14px;font-weight:700;margin-bottom:7px;color:#dde2ef;}
+  .gm-card p{font-size:13px;color:#757c99;line-height:1.65;}
+  .gm-alert{margin-top:24px;padding:18px 22px;background:rgba(200,164,80,.06);border:1px solid #7a5e28;border-radius:7px;font-size:14px;color:#dde2ef;}
+  .gm-demo-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .gm-tab{padding:7px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #252836;background:transparent;color:#757c99;transition:all .2s;font-family:'DM Sans',sans-serif;}
+  .gm-tab.active-red{border-color:#d44;background:rgba(221,68,68,.12);color:#d44;}
+  .gm-tab.active-amber{border-color:#d4a020;background:rgba(212,160,32,.12);color:#d4a020;}
+  .gm-tab.active-gold{border-color:#c8a450;background:rgba(200,164,80,.12);color:#e4be72;}
+  .gm-demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;}
+  .gm-terminal{background:#0a0b0f;border:1px solid #252836;border-radius:9px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .gm-term-bar{background:#16181f;padding:9px 14px;border-bottom:1px solid #252836;display:flex;align-items:center;gap:6px;}
+  .gm-dot{width:10px;height:10px;border-radius:50%;}
+  .gm-term-lbl{color:#757c99;font-size:11px;margin-left:8px;}
+  .gm-term-body{padding:16px 18px;min-height:250px;}
+  .gm-prompt{display:flex;gap:8px;margin-bottom:6px;}
+  .gm-cursor{display:inline-block;width:7px;height:13px;background:#e4be72;margin-left:2px;vertical-align:middle;animation:blink .8s step-end infinite;}
+  .gm-output{font-size:11px;line-height:1.7;margin-top:4px;white-space:pre-wrap;animation:fadeUp .3s ease;}
+  .gm-explain{animation:fadeUp .3s ease;}
+  .gm-explain h3{font-size:17px;font-weight:700;line-height:1.3;margin-bottom:12px;}
+  .gm-explain p{font-size:13px;color:#757c99;line-height:1.7;margin-bottom:14px;}
+  .gm-highlight-box{border-radius:6px;padding:12px 16px;margin-bottom:16px;border-left:3px solid;}
+  .gm-explain-link{font-size:13px;text-decoration:none;}
+  .gm-how-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin-top:40px;}
+  .gm-step{display:flex;gap:14px;margin-bottom:22px;}
+  .gm-step-num{width:30px;height:30px;border-radius:50%;background:rgba(200,164,80,.1);border:1px solid #7a5e28;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#c8a450;font-size:11px;font-family:monospace;font-weight:600;}
+  .gm-step h3{font-size:14px;font-weight:600;margin-bottom:4px;color:#dde2ef;}
+  .gm-step p{font-size:13px;color:#757c99;line-height:1.6;}
+  .gm-code-box{background:#0a0b0f;border:1px solid #252836;border-radius:9px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:12px;}
+  .gm-code-bar{background:#16181f;padding:9px 14px;border-bottom:1px solid #252836;color:#757c99;font-size:11px;}
+  .gm-code-body{padding:18px;line-height:1.7;}
+  .gm-dim{color:#383d55;}
+  .gm-stripe{background:#0c0d12;border-top:1px solid #252836;border-bottom:1px solid #252836;padding:60px 32px;}
+  table.gm-table{width:100%;border-collapse:collapse;min-width:580px;}
+  .gm-table th{padding:11px 14px;font-size:11px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #252836;}
+  .gm-table td{padding:9px 14px;font-size:13px;border-bottom:1px solid rgba(37,40,54,.5);}
+  .gm-table tr:nth-child(even) td{background:rgba(22,24,31,.6);}
+  .gm-table .gm-check{color:#3ec98a;font-size:15px;}
+  .gm-table .gm-dash{color:#383d55;font-size:13px;}
+  .gm-mike{background:linear-gradient(135deg,#0e0b1a,#0c0d12);border-top:1px solid rgba(155,127,232,.2);border-bottom:1px solid rgba(155,127,232,.2);padding:60px 32px;}
+  .gm-mike-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center;max-width:1100px;margin:0 auto;}
+  .gm-mike-feat{display:flex;gap:8px;margin-bottom:9px;font-size:13px;color:#757c99;}
+  .gm-mike-arr{color:#9b7fe8;flex-shrink:0;}
+  .gm-mike-btns{display:flex;gap:10px;margin-top:22px;align-items:center;flex-wrap:wrap;}
+  .gm-mike-cta{background:rgba(155,127,232,.15);border:1px solid rgba(155,127,232,.4);color:#9b7fe8;border-radius:7px;padding:10px 22px;font-size:14px;font-weight:600;text-decoration:none;}
+  .gm-mike-price{color:#757c99;font-size:13px;}
+  .gm-qbr-box{background:#16181f;border:1px solid rgba(155,127,232,.2);border-radius:9px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:11.5px;}
+  .gm-qbr-bar{background:#13101e;padding:9px 14px;border-bottom:1px solid rgba(155,127,232,.15);color:#9b7fe8;font-size:11px;}
+  .gm-qbr-body{padding:18px;line-height:1.75;white-space:pre-wrap;}
+  .gm-docs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:32px;}
+  .gm-doc-card{background:#16181f;border:1px solid #252836;border-radius:8px;padding:22px;text-decoration:none;display:block;transition:transform .2s;}
+  .gm-doc-card:hover{transform:translateY(-2px);}
+  .gm-doc-card h3{font-size:14px;font-weight:700;margin-bottom:8px;color:#dde2ef;}
+  .gm-doc-card p{font-size:13px;color:#757c99;line-height:1.6;margin-bottom:12px;}
+  .gm-footer{border-top:1px solid #252836;background:#0c0d12;padding:36px 32px;}
+  .gm-footer-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+  .gm-footer-links{display:flex;gap:20px;flex-wrap:wrap;}
+  .gm-footer-links a{color:#383d55;font-size:13px;text-decoration:none;}
+  .gm-footer-links a:hover{color:#757c99;}
+  .gm-table-wrap{overflow-x:auto;}
+</style>
+
+<div id="gm-root">
+
+  <nav class="gm-nav">
+    <div class="gm-logo">
+      <span style="color:#c8a450;font-size:18px;">⬡</span>
+      Grid<span style="color:#c8a450;">Memory</span>
+    </div>
+    <div class="gm-nav-links">
+      <a href="#demos">Demos</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#mike">MIKE</a>
+      <a href="#docs">Docs</a>
+      <a href="https://github.com/openclaw/grid-memory">GitHub</a>
+      <a href="mailto:nick@criticalpathfoundry.com" class="gm-btn-sm">Book a demo</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="gm-hero">
+    <svg class="gm-hero-art" width="440" height="440" viewBox="0 0 440 440">
+      <g id="hexg" opacity="0.09"></g>
+      <g id="nodeg" opacity="0.14"></g>
+    </svg>
+
+    <div style="max-width:600px;position:relative;">
+      <div class="gm-badge">
+        <div class="gm-pulse"></div>
+        <span>v1.2.0 — Open Beta</span>
+      </div>
+
+      <h1 class="gm-headline">
+        Grid Memory catches<br>the things your<br>
+        <em style="font-style:italic;color:#c8a450;">AI agents forget.</em>
+      </h1>
+
+      <p class="gm-sub">Shared persistent memory for multi-agent teams. Conflict detection, amnesia detection, decision graphs — dropping into any agent stack with one line of code.</p>
+
+      <div class="gm-install">
+        <span class="gm-dollar">$</span>
+        <code>npm install grid-memory</code>
+        <button class="gm-copy" onclick="doCopy(this,'npm install grid-memory')">copy</button>
+      </div>
+      <div class="gm-install">
+        <span class="gm-dollar">$</span>
+        <code>pip install grid-memory</code>
+        <button class="gm-copy" onclick="doCopy(this,'pip install grid-memory')">copy</button>
+      </div>
+
+      <div class="gm-ctas" style="margin-top:20px;">
+        <a href="#demos" class="gm-cta-primary">See it in action ↓</a>
+        <a href="#docs" class="gm-cta-secondary">Read the docs →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="gm-section" style="padding-top:0;">
+    <div class="gm-stats">
+      <div class="gm-stat"><div class="gm-stat-num">36.9%</div><div class="gm-stat-lbl">of agent failures from memory gaps</div></div>
+      <div class="gm-stat"><div class="gm-stat-num">6x</div><div class="gm-stat-lbl">task uplift with team dreaming</div></div>
+      <div class="gm-stat"><div class="gm-stat-num">A+</div><div class="gm-stat-lbl">independent code review score</div></div>
+      <div class="gm-stat"><div class="gm-stat-num">0</div><div class="gm-stat-lbl">open P0 bugs across 87 versions</div></div>
+      <div class="gm-stat"><div class="gm-stat-num">158</div><div class="gm-stat-lbl">ops/sec benchmark throughput</div></div>
+    </div>
+  </div>
+
+  <!-- PROBLEM -->
+  <div class="gm-section" style="padding-top:20px;">
+    <div class="gm-eyebrow"><div class="gm-eyebrow-line"></div><span class="gm-eyebrow-text">The Problem</span><div class="gm-eyebrow-line2"></div></div>
+    <h2 class="gm-sh">Multi-agent systems fail because<br><span style="color:#c8a450;">agents forget.</span></h2>
+    <div class="gm-cards3">
+      <div class="gm-card" style="border-top:3px solid #d44;">
+        <div class="gm-card-icon" style="color:#d44;">⚠</div>
+        <h3>Agent Amnesia</h3>
+        <p>Sessions end, decisions vanish. The same problem gets discovered and re-solved by different agents on different days.</p>
+      </div>
+      <div class="gm-card" style="border-top:3px solid #d4a020;">
+        <div class="gm-card-icon" style="color:#d4a020;">⚡</div>
+        <h3>False Consensus</h3>
+        <p>One agent writes a wrong fact. Three agents act on it. Research shows 87% of downstream decisions get corrupted within 4 hours.</p>
+      </div>
+      <div class="gm-card" style="border-top:3px solid #c8a450;">
+        <div class="gm-card-icon" style="color:#c8a450;">?</div>
+        <h3>Zero Explainability</h3>
+        <p>When production breaks, nobody knows which agent wrote the triggering fact, when, or what it contradicted. Debugging takes days.</p>
+      </div>
+    </div>
+    <div class="gm-alert">
+      <strong style="color:#e4be72;">This is not a model problem.</strong> It is not a prompt problem. It is a memory architecture problem — and it has no production solution today.
+    </div>
+  </div>
+
+  <!-- DEMOS -->
+  <div class="gm-section" id="demos">
+    <div class="gm-eyebrow"><div class="gm-eyebrow-line"></div><span class="gm-eyebrow-text">Live Demos</span><div class="gm-eyebrow-line2"></div></div>
+    <h2 class="gm-sh">Three features. <span style="color:#c8a450;">All free. All open source.</span></h2>
+    <p style="color:#757c99;font-size:14px;max-width:480px;margin-bottom:28px;">These are the features that make production engineers stop and stare. Community tier. Forever.</p>
+
+    <div class="gm-demo-tabs">
+      <button class="gm-tab active-red" id="tab0" onclick="switchDemo(0)">Amnesia Detection</button>
+      <button class="gm-tab" id="tab1" onclick="switchDemo(1)">Conflict Detection</button>
+      <button class="gm-tab" id="tab2" onclick="switchDemo(2)">Decision Graph</button>
+    </div>
+
+    <div class="gm-demo-grid">
+      <div>
+        <div class="gm-terminal">
+          <div class="gm-term-bar">
+            <div class="gm-dot" style="background:#d45;"></div>
+            <div class="gm-dot" style="background:#da4;"></div>
+            <div class="gm-dot" style="background:#4c4;"></div>
+            <span class="gm-term-lbl">grid-memory — bash</span>
+          </div>
+          <div class="gm-term-body">
+            <div class="gm-prompt">
+              <span style="color:#3ec98a;">$</span>
+              <span id="typed-text" style="color:#dde2ef;white-space:pre-wrap;"></span>
+              <span class="gm-cursor" id="cursor"></span>
+            </div>
+            <div id="term-output" class="gm-output" style="display:none;color:#757c99;"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+          <button class="gm-copy" id="copy-cmd-btn" onclick="copyCmdCurrent()">copy command</button>
+          <a href="#docs" style="color:#757c99;font-size:12px;text-decoration:none;">full walkthrough →</a>
+        </div>
+      </div>
+
+      <div id="demo-explain" class="gm-explain"></div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="gm-stripe">
+    <div style="max-width:1100px;margin:0 auto;">
+      <div class="gm-eyebrow"><div class="gm-eyebrow-line"></div><span class="gm-eyebrow-text">How It Works</span><div class="gm-eyebrow-line2"></div></div>
+      <h2 class="gm-sh">One line of code. <span style="color:#c8a450;">Every agent connected.</span></h2>
+      <div class="gm-how-grid">
+        <div>
+          <div class="gm-step"><div class="gm-step-num">01</div><div><h3>Change one line</h3><p>Point your agent framework at Grid Memory instead of OpenAI directly. Full streaming, full compatibility, zero code changes to your agents.</p></div></div>
+          <div class="gm-step"><div class="gm-step-num">02</div><div><h3>Agents write decisions</h3><p>Every agent logs what it decides, discovers, or observes. Typed entries with TTL — decisions, facts, blockers, handoffs, observations.</p></div></div>
+          <div class="gm-step"><div class="gm-step-num">03</div><div><h3>The Grid watches for problems</h3><p>Conflict detection, amnesia detection, staleness scoring — running continuously on every write, catching problems before they propagate.</p></div></div>
+          <div class="gm-step"><div class="gm-step-num">04</div><div><h3>You get answers</h3><p>Ask the Grid what was forgotten. Trace a decision to its root. Generate a QBR. The institutional memory is already there.</p></div></div>
+        </div>
+        <div class="gm-code-box">
+          <div class="gm-code-bar">agent.py — before and after</div>
+          <div class="gm-code-body">
+<span class="gm-dim"># BEFORE</span>
+<span style="color:#757c99;">from openai import OpenAI
+client = OpenAI(
+  api_key=<span style="color:#e4be72;">"sk-..."</span>
+)</span>
+
+<span style="color:#3ec98a;"># AFTER — 1 line changed</span>
+<span style="color:#dde2ef;">from openai import OpenAI
+client = OpenAI(
+  base_url=<span style="color:#e4be72;">"http://localhost:3000/v1"</span>,
+  api_key=<span style="color:#e4be72;">"any-value"</span>
+)</span>
+
+<span class="gm-dim"># Every agent now shares memory.
+# Grid Memory handles the rest.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="gm-section" id="pricing">
+    <div class="gm-eyebrow"><div class="gm-eyebrow-line"></div><span class="gm-eyebrow-text">Pricing</span><div class="gm-eyebrow-line2"></div></div>
+    <h2 class="gm-sh">Start free. <span style="color:#c8a450;">Scale when it matters.</span></h2>
+    <p style="color:#757c99;font-size:14px;max-width:480px;margin-bottom:32px;">Core features — including amnesia detection, conflict detection, and decision graphs — are free forever under BUSL-1.1.</p>
+    <div style="background:#16181f;border:1px solid #252836;border-radius:9px;overflow:hidden;">
+      <div class="gm-table-wrap">
+        <table class="gm-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;color:#757c99;">Feature</th>
+              <th style="text-align:center;color:#3ec98a;">Community<br><span style="font-size:11px;color:#757c99;font-weight:400;text-transform:none;">Free forever</span></th>
+              <th style="text-align:center;color:#c8a450;">Enterprise<br><span style="font-size:11px;color:#757c99;font-weight:400;text-transform:none;">$24K–$60K/yr</span></th>
+              <th style="text-align:center;color:#9b7fe8;background:rgba(155,127,232,.04);">MIKE Intelligence<br><span style="font-size:11px;color:#757c99;font-weight:400;text-transform:none;">$36K–$120K/yr</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Memory Engine + SDK</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Conflict Detection</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Amnesia Detection</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Decision Graph</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Grid Dreaming + Cascade Firewall</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Governance + Federation</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>PostgreSQL + SSO / SAML</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Advanced audit + workspace isolation</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-check" style="text-align:center;">✓</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Executive Dashboard + QBR</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>Portfolio Analytics + Board Reporting</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr><td>PE Operating Dashboards</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-dash" style="text-align:center;">—</td><td class="gm-check" style="text-align:center;background:rgba(155,127,232,.04);">✓</td></tr>
+            <tr>
+              <td></td>
+              <td style="text-align:center;padding:14px;"><a href="#docs" style="background:rgba(62,201,138,.12);border:1px solid #1a5538;color:#3ec98a;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:600;text-decoration:none;">npm install →</a></td>
+              <td style="text-align:center;padding:14px;"><a href="mailto:nick@criticalpathfoundry.com" style="background:rgba(200,164,80,.12);border:1px solid #7a5e28;color:#e4be72;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:600;text-decoration:none;">Book a call →</a></td>
+              <td style="text-align:center;padding:14px;background:rgba(155,127,232,.04);"><a href="mailto:nick@criticalpathfoundry.com" style="background:rgba(155,127,232,.12);border:1px solid rgba(155,127,232,.4);color:#9b7fe8;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:600;text-decoration:none;">Book demo →</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIKE -->
+  <div class="gm-mike" id="mike">
+    <div class="gm-mike-grid">
+      <div>
+        <div class="gm-eyebrow"><div class="gm-eyebrow-line" style="background:#9b7fe8;"></div><span class="gm-eyebrow-text" style="color:#9b7fe8;">MIKE Intelligence</span><div class="gm-eyebrow-line2" style="background:linear-gradient(90deg,rgba(155,127,232,.4),transparent);"></div></div>
+        <h2 class="gm-sh">The consulting QBR that used to<br><span style="color:#9b7fe8;">take 20 hours.</span></h2>
+        <p style="color:#757c99;font-size:14px;line-height:1.7;margin-bottom:20px;">MIKE Intelligence turns every agent decision logged in Grid Memory into executive-grade business intelligence. Generated in seconds from the memory your agents already write.</p>
+        <div class="gm-mike-feat"><span class="gm-mike-arr">▶</span><span>Quarterly Business Review generation</span></div>
+        <div class="gm-mike-feat"><span class="gm-mike-arr">▶</span><span>Opportunity pipeline with stage-weighted forecasting</span></div>
+        <div class="gm-mike-feat"><span class="gm-mike-arr">▶</span><span>Portfolio-level amnesia detection</span></div>
+        <div class="gm-mike-feat"><span class="gm-mike-arr">▶</span><span>Board-ready executive dashboards</span></div>
+        <div class="gm-mike-feat"><span class="gm-mike-arr">▶</span><span>PE operating dashboards + portfolio rollups</span></div>
+        <div class="gm-mike-btns">
+          <a href="mailto:nick@criticalpathfoundry.com" class="gm-mike-cta">Book a MIKE demo →</a>
+          <span class="gm-mike-price">From $36K/year</span>
+        </div>
+      </div>
+      <div class="gm-qbr-box">
+        <div class="gm-qbr-bar">POST /qbr/generate → executive-dashboard</div>
+        <div class="gm-qbr-body" style="color:#757c99;">{
+  <span style="color:#9b7fe8;">"period"</span>: "Q2 2026",
+  <span style="color:#9b7fe8;">"kpis"</span>: {
+    <span style="color:#9b7fe8;">"decisions_logged"</span>: <span style="color:#e4be72;">247</span>,
+    <span style="color:#9b7fe8;">"success_rate"</span>: <span style="color:#e4be72;">0.81</span>,
+    <span style="color:#9b7fe8;">"contradictions_caught"</span>: <span style="color:#e4be72;">12</span>,
+    <span style="color:#9b7fe8;">"hours_saved"</span>: <span style="color:#e4be72;">340</span>
+  },
+  <span style="color:#3ec98a;">"wins"</span>: [
+    "PostgreSQL migration completed",
+    "Auth refactor — zero incidents"
+  ],
+  <span style="color:#d4a020;">"risks"</span>: [
+    "3 decisions missing rationale",
+    "Deploy dependency forgotten"
+  ],
+  <span style="color:#9b7fe8;">"pipeline_value"</span>: <span style="color:#e4be72;">"$2.4M"</span>,
+  <span style="color:#9b7fe8;">"recommended_actions"</span>: <span style="color:#e4be72;">5</span>
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCS -->
+  <div class="gm-section" id="docs">
+    <div class="gm-eyebrow"><div class="gm-eyebrow-line"></div><span class="gm-eyebrow-text">Get Started</span><div class="gm-eyebrow-line2"></div></div>
+    <div class="gm-docs-grid">
+      <a class="gm-doc-card" href="https://github.com/openclaw/grid-memory/blob/main/docs/FIRST_5_MINUTES.md" style="border-top:3px solid #3ec98a;">
+        <h3>Quick Start</h3>
+        <p>Up and running in 5 minutes. Seed data, dashboard, amnesia detection live.</p>
+        <span style="color:#3ec98a;font-size:13px;">Read guide →</span>
+      </a>
+      <a class="gm-doc-card" href="https://github.com/openclaw/grid-memory/blob/main/docs/COMPREHENSIVE_GUIDE.md" style="border-top:3px solid #c8a450;">
+        <h3>API Reference</h3>
+        <p>Complete endpoint docs with examples for every operation.</p>
+        <span style="color:#c8a450;font-size:13px;">Browse API →</span>
+      </a>
+      <a class="gm-doc-card" href="https://github.com/openclaw/grid-memory/blob/main/docs/SECURITY.md" style="border-top:3px solid #d4a020;">
+        <h3>Security</h3>
+        <p>Auth layers, permission tiers, PII detection, audit trails, workspace isolation.</p>
+        <span style="color:#d4a020;font-size:13px;">Read security docs →</span>
+      </a>
+      <a class="gm-doc-card" href="https://github.com/openclaw/grid-memory" style="border-top:3px solid #9b7fe8;">
+        <h3>GitHub</h3>
+        <p>Full codebase, 87 versions, A+ code review, 69/69 tests passing.</p>
+        <span style="color:#9b7fe8;font-size:13px;">View on GitHub →</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="gm-footer">
+    <div class="gm-footer-inner">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="color:#c8a450;font-size:16px;">⬡</span>
+          <span style="font-weight:700;font-size:14px;">Grid<span style="color:#c8a450;">Memory</span></span>
+        </div>
+        <div style="font-size:12px;color:#383d55;">by Critical Path Foundry · nick@criticalpathfoundry.com</div>
+        <div style="font-size:11px;color:#383d55;margin-top:3px;">BUSL-1.1 License · Changes to Apache 2.0 on 2030-05-30</div>
+      </div>
+      <div class="gm-footer-links">
+        <a href="https://github.com/openclaw/grid-memory">GitHub</a>
+        <a href="https://npmjs.com/package/grid-memory">npm</a>
+        <a href="https://pypi.org/project/grid-memory">PyPI</a>
+        <a href="#pricing">Enterprise</a>
+        <a href="#mike">MIKE</a>
+        <a href="mailto:nick@criticalpathfoundry.com">Contact</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+const DEMOS = [
+  {
+    cmd: "curl localhost:3000/amnesia/detect",
+    activeClass: "active-red",
+    output: `{
+  "forgotten_decisions": [
+    {
+      "entry": "Use PostgreSQL for primary storage",
+      "written_by": "arch-agent",
+      "age_days": 21,
+      "contradiction": "Agent scheduled MongoDB migration",
+      "risk": "high",
+      "action": "Review before proceeding"
+    }
+  ],
+  "amnesia_score": 0.74,
+  "summary": "1 critical forgotten decision found"
+}`,
+    color: "#d44",
+    title: "Your AI team forgot a critical decision.",
+    body: "Grid Memory scans all active decisions against recent writes. When it finds a new agent about to contradict a 3-week-old architectural decision, it flags it before anything breaks.",
+    note: "One API call. No configuration. Works with any agent stack.",
+    link: "Amnesia score, age decay, contradiction detection →",
+  },
+  {
+    cmd: `curl -X POST localhost:3000/write \\\n  -d '{"type":"decision","content":"Deploy on Friday","agent_id":"ops-agent"}'`,
+    activeClass: "active-amber",
+    output: `{
+  "entry_id": "grid_20260530_c4f8a2",
+  "status": "written",
+  "conflict_check": {
+    "detected": true,
+    "contradicts": "Never deploy on Fridays",
+    "written_by": "arch-agent",
+    "age_days": 21,
+    "action": "CONFLICT FLAGGED — human review required"
+  }
+}`,
+    color: "#d4a020",
+    title: "Two agents silently disagreed.",
+    body: "When an agent writes a new decision, Grid Memory checks it against recent entries in the same tag scope. Contradictions are flagged with the original author and risk level.",
+    note: "The conflict cascades forward through all downstream decisions that depended on the wrong fact.",
+    link: "Cascade Firewall, recall command, audit trail →",
+  },
+  {
+    cmd: "curl localhost:3000/decisions/graph",
+    activeClass: "active-gold",
+    output: `{
+  "nodes": 47,
+  "edges": 89,
+  "root_decisions": 3,
+  "causal_chains": [
+    {
+      "root": "Use PostgreSQL",
+      "depth": 4,
+      "descendants": [
+        "Schema design",
+        "Migration plan",
+        "Deployment order",
+        "→ Incident #4471"
+      ]
+    }
+  ],
+  "insight": "1 root decision led to production incident"
+}`,
+    color: "#c8a450",
+    title: "Show me every decision that led to this incident.",
+    body: "The decision graph is a full DAG of every decision, fact, and observation — with causal links showing what influenced what. Trace any production incident back to the root in seconds.",
+    note: "Export as JSON. Share with your post-mortem. EU AI Act compliance built in.",
+    link: "Causal chains, explainability transcript, export →",
+  },
+];
+
+let currentDemo = 0;
+let typingTimer = null;
+
+function switchDemo(idx) {
+  currentDemo = idx;
+  [0,1,2].forEach(i => {
+    const t = document.getElementById('tab' + i);
+    t.className = 'gm-tab';
+  });
+  document.getElementById('tab' + idx).className = 'gm-tab ' + DEMOS[idx].activeClass;
+  startTyping(idx);
+  renderExplain(idx);
+}
+
+function startTyping(idx) {
+  clearTimeout(typingTimer);
+  const d = DEMOS[idx];
+  const textEl = document.getElementById('typed-text');
+  const cursorEl = document.getElementById('cursor');
+  const outEl = document.getElementById('term-output');
+  textEl.textContent = '';
+  outEl.style.display = 'none';
+  outEl.textContent = '';
+  cursorEl.style.display = 'inline-block';
+  const full = d.cmd;
+  let i = 0;
+  function tick() {
+    i++;
+    textEl.textContent = full.slice(0, i);
+    if (i < full.length) {
+      typingTimer = setTimeout(tick, 16);
+    } else {
+      cursorEl.style.display = 'none';
+      typingTimer = setTimeout(() => {
+        renderOutput(idx);
+      }, 200);
+    }
+  }
+  typingTimer = setTimeout(tick, 300);
+}
+
+function renderOutput(idx) {
+  const d = DEMOS[idx];
+  const outEl = document.getElementById('term-output');
+  outEl.style.display = 'block';
+  outEl.innerHTML = '';
+  const lines = d.output.split('\n');
+  lines.forEach(line => {
+    const span = document.createElement('span');
+    const hi = /CONFLICT|forgotten|risk|incident|amnesia_score|Incident|contradiction/.test(line);
+    span.style.color = hi ? d.color : '#757c99';
+    span.textContent = line + '\n';
+    outEl.appendChild(span);
+  });
+}
+
+function renderExplain(idx) {
+  const d = DEMOS[idx];
+  const el = document.getElementById('demo-explain');
+  el.innerHTML = `
+    <h3 style="font-size:17px;font-weight:700;line-height:1.3;margin-bottom:12px;color:${d.color};">${d.title}</h3>
+    <p style="font-size:13px;color:#757c99;line-height:1.7;margin-bottom:14px;">${d.body}</p>
+    <div style="background:#1b1d26;border-left:3px solid ${d.color};border-radius:6px;padding:12px 16px;margin-bottom:16px;">
+      <p style="font-size:13px;color:#dde2ef;margin:0;">${d.note}</p>
+    </div>
+    <a href="#docs" style="color:${d.color};font-size:13px;text-decoration:none;">${d.link}</a>
+  `;
+}
+
+function doCopy(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ copied';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 1800);
+  });
+}
+
+function copyCmdCurrent() {
+  const cmds = ["curl localhost:3000/amnesia/detect", "curl -X POST localhost:3000/write", "curl localhost:3000/decisions/graph"];
+  const btn = document.getElementById('copy-cmd-btn');
+  navigator.clipboard.writeText(cmds[currentDemo]).then(() => {
+    btn.textContent = '✓ copied';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copy command'; btn.classList.remove('ok'); }, 1800);
+  });
+}
+
+// Draw hex grid art
+(function() {
+  const hexG = document.getElementById('hexg');
+  const nodeG = document.getElementById('nodeg');
+  const cx = 260, cy = 220, rings = 3, size = 200;
+  const r = size / (2 * rings + 1);
+  for (let q = -rings; q <= rings; q++) {
+    for (let rr = -rings; rr <= rings; rr++) {
+      if (Math.abs(q + rr) > rings) continue;
+      const hx = cx + r * 1.732 * (q + rr / 2);
+      const hy = cy + r * 1.5 * rr;
+      const corners = Array.from({length:6}, (_,i) => {
+        const a = (60*i+30)*Math.PI/180;
+        return `${hx+r*0.85*Math.cos(a)},${hy+r*0.85*Math.sin(a)}`;
+      }).join(' ');
+      const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      poly.setAttribute('points', corners);
+      poly.setAttribute('fill','rgba(200,164,80,0.22)');
+      poly.setAttribute('stroke','rgba(200,164,80,0.85)');
+      poly.setAttribute('stroke-width','0.6');
+      hexG.appendChild(poly);
+    }
+  }
+  const n = 7, nr = 90;
+  const nodes = Array.from({length:n},(_,i)=>({
+    x: cx+nr*Math.cos(360/n*i*Math.PI/180),
+    y: cy+nr*Math.sin(360/n*i*Math.PI/180)
+  }));
+  nodes.push({x:cx,y:cy});
+  nodes.forEach((a,i) => nodes.forEach((b,j) => {
+    if (j<=i) return;
+    if (Math.abs(i-j)<=2 || j===nodes.length-1) {
+      const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',a.x); l.setAttribute('y1',a.y);
+      l.setAttribute('x2',b.x); l.setAttribute('y2',b.y);
+      l.setAttribute('stroke','rgba(200,164,80,1)'); l.setAttribute('stroke-width','0.5');
+      nodeG.appendChild(l);
+    }
+  }));
+  nodes.forEach((n,i) => {
+    const r1 = i===nodes.length-1?9:5;
+    const c1 = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c1.setAttribute('cx',n.x); c1.setAttribute('cy',n.y); c1.setAttribute('r',r1+3);
+    c1.setAttribute('fill','rgba(200,164,80,0.25)');
+    nodeG.appendChild(c1);
+    const c2 = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c2.setAttribute('cx',n.x); c2.setAttribute('cy',n.y); c2.setAttribute('r',r1);
+    c2.setAttribute('fill','rgba(200,164,80,0.9)');
+    nodeG.appendChild(c2);
+  });
+})();
+
+switchDemo(0);
+</script>
