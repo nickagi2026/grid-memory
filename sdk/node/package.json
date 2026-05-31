@@ -1,6 +1,6 @@
 {
   "name": "grid-memory",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Shared persistent memory for multi-agent teams \u2014 Node.js SDK",
   "main": "src/index.js",
   "types": "src/index.d.ts",

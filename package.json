@@ -1,6 +1,6 @@
 {
   "name": "grid-memory",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Persistent shared memory for multi-agent teams \u2014 append-only writes, relevance-weighted reads, TTL pruning, context injection",
   "main": "sdk/node/src/index.js",
   "scripts": {
