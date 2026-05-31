@@ -41,7 +41,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "Topic :: Scientific Computing :: Artificial Intelligence",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: System :: Distributed Computing",
     ],
     keywords="multi-agent, shared-memory, agent-memory, ai-agents, crewai, autogen, langgraph",

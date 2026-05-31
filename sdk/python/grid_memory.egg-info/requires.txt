@@ -1,0 +1,6 @@
+
+[autogen]
+pyautogen>=0.2
+
+[dev]
+pytest
