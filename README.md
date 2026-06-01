@@ -6,19 +6,6 @@ Shared persistent memory for multi-agent teams. Any agent writes. Any agent read
 The Grid remembers — and tells you when something has been forgotten, contradicted,
 or lost.
 
-## Quick Start
-
-```bash
-npm install grid-memory
-node server.js
-```
-
-Or Python:
-```bash
-cd sdk/python
-pip install -e .
-```
-
 ---
 
 ## What's Free
@@ -102,22 +89,42 @@ Business intelligence derived from your organization's memory.
 > - **Docker**: ⏳ Pending
 > - **Enterprise (MIKE + Connectors + Semantic Search)**: 🔒 Private — contact nick@criticalpathfoundry.com
 
-```bash
-# Start the server
-cd grid-memory
-node server.js
+### Install & Run
 
+```bash
+# Install (npm)
+npm install grid-memory
+
+# Start the server (default: http://localhost:8080)
+node ./node_modules/grid-memory/server.js
+
+# Or clone the repo and run directly
+git clone https://github.com/nickagi2026/grid-memory.git
+cd grid-memory
+PORT=8080 node server.js
+```
+
+### Try It
+
+```bash
 # Write your first entry
 curl -X POST http://localhost:8080/write \
   -H "Content-Type: application/json" \
   -d '{"agent_id":"my-agent","type":"decision","content":"Use PostgreSQL. Rationale: ACID compliance.","tags":["topic:database"]}'
 
-# Read it back
+# Query it back
 curl "http://localhost:8080/query?tags=topic:database"
 
 # See your business intelligence
 curl http://localhost:8080/roi
 curl http://localhost:8080/executive/dashboard
+```
+
+### Python SDK
+
+```bash
+cd sdk/python
+pip install -e .
 ```
 
 ## API at a Glance
