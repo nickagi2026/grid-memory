@@ -34,7 +34,14 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const { Grid } = require('./reference/store.js');
+// Use SQLite backend when GRID_DB_PATH is set, otherwise use JSON file store
+let Grid;
+if (process.env.GRID_DB_PATH) {
+  Grid = require('./reference/sqlite-store.js').Grid;
+  console.log('[Grid] Using SQLite backend: ' + process.env.GRID_DB_PATH);
+} else {
+  Grid = require('./reference/store.js').Grid;
+}
 const openaiProxy = require('./openai-proxy.js');
 const decisionGraph = require('./decision-graph.js');
 const amnesiaDetector = require('./amnesia-detector.js');
@@ -346,7 +353,7 @@ function registerIntelligenceRoutes() {
       return json(res, await setupWizard.applyConfig(body, grid));
     }
     return json(res, await setupWizard.wizard(grid));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   // Governance and intelligence endpoints
@@ -398,7 +405,7 @@ function registerIntelligenceRoutes() {
       return json(res, { generated, registered: constitution.registerConstitution('default', generated.rules, generated.enforceMode) });
     }
     return json(res, { generated, message: 'No rules could be generated from the provided text.' });
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('GET', '/auto-contracts/state', 'analyst', async (req, res, grid) => {
@@ -410,14 +417,14 @@ function registerIntelligenceRoutes() {
     logAudit('auto_contract_approve', 'allowed', 'POST', '/auto-contracts/approve', '', '', '', '');
     const body = await parseBody(req);
     return json(res, autoContract.approveContract(body));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('POST', '/auto-contracts/reject', 'admin', async (req, res, grid) => {
     logAudit('auto_contract_reject', 'allowed', 'POST', '/auto-contracts/reject', '', '', '', '');
     const body = await parseBody(req);
     return json(res, autoContract.rejectContract(body.scope));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('GET', '/auto-contracts', 'analyst', async (req, res, grid) => {
@@ -430,7 +437,7 @@ function registerIntelligenceRoutes() {
   registry.register('POST', '/prune', 'admin', async (req, res, grid) => {
     logAudit('prune', 'allowed', 'POST', '/prune', '', '', '', '');
     return json(res, await grid.prune());
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('DELETE', '/forget/:id', 'admin', async (req, res, grid, gateway, query, params) => {
@@ -449,7 +456,7 @@ function registerIntelligenceRoutes() {
     const result = await grid.forget(params.id);
     if (!result.found) return error(res, result.message, 404, 'NOT_FOUND');
     return json(res, result);
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('GET', '/export', 'architect', async (req, res, grid) => {
@@ -479,20 +486,20 @@ function registerIntelligenceRoutes() {
       } catch (e) { skipped++; }
     }
     return json(res, { imported, skipped, workspace: ws || 'global' });
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('POST', '/seed', 'admin', async (req, res, grid) => {
     logAudit('seed', 'allowed', 'POST', '/seed', '', '', '', '');
     return json(res, await seedMode.seedGrid(grid));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('POST', '/federation/quick-connect', 'admin', async (req, res, grid) => {
     const body = await parseBody(req);
     logAudit('federation_quick_connect', 'allowed', 'POST', '/federation/quick-connect', '', '', '', body.peerUrl || '');
     return json(res, await require('./federation.js').quickConnect(body.peerUrl, body.options || {}));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('POST', '/contracts', 'architect', async (req, res, grid) => {
@@ -517,7 +524,7 @@ function registerIntelligenceRoutes() {
     const body = await parseBody(req);
     logAudit('federation_peer_add', 'allowed', 'POST', '/federation/peers', '', '', '', body.url || '');
     return json(res, require('./federation.js').registerPeer(body.url, body.trustLevel || 'unverified', body.sharedSecret || null));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('GET', '/federation/peers', 'analyst', async (req, res, grid) => {
@@ -530,7 +537,7 @@ function registerIntelligenceRoutes() {
     const peerUrl = decodeURIComponent(fullPath.slice('/federation/peers/'.length));
     logAudit('federation_peer_remove', 'allowed', 'DELETE', '/federation/peers/' + peerUrl, '', '', '', '');
     return json(res, require('./federation.js').removePeer(peerUrl));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
   registry.register('POST', '/federation/sync/*', 'admin', async (req, res, grid) => {
@@ -538,7 +545,7 @@ function registerIntelligenceRoutes() {
     const peerUrl = decodeURIComponent(fullPath.slice('/federation/sync/'.length));
     logAudit('federation_sync', 'allowed', 'POST', '/federation/sync/' + peerUrl, '', '', '', '');
     return json(res, await require('./federation.js').syncFromPeer(grid, peerUrl));
-  }), { rateLimit: 5 });
+  }, { rateLimit: 5 });
 
 
 
