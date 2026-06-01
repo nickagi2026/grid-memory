@@ -8,3 +8,22 @@ sdk/python/tests/__pycache__/
 *.tar.gz
 *.bak
 grid-memory-v*.zip
+
+# MIKE Intelligence Layer — commercial tier (private)
+mike-dashboard.js
+qbr-generator.js
+
+# Internal OpenClaw skill config
+SKILL.md
+_meta.json
+
+# Binary archives
+*.tar.gz
+*.zip
+
+# Local screenshots
+*.png
+*.jpg
+!docs/assets/demo-poster.jpg
+!docs/assets/grid-memory-logo.jpg
+!docs/assets/logo-icon.jpg
