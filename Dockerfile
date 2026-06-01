@@ -16,10 +16,16 @@ FROM node:20-alpine
 # Create non-root user for security
 RUN addgroup -S grid && adduser -S grid -G grid
 
+# Install build deps needed for better-sqlite3 native compilation
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# Copy all community modules
-COPY package.json .
+# Install dependencies (better-sqlite3 requires native compilation)
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Copy application source
 COPY server.js gateway.js route-registry.js governance-db.js .
 COPY openai-proxy.js embeddings.js .
 COPY contracts.js constitution.js federation.js subscriptions.js .

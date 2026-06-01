@@ -1,7 +1,7 @@
 {
   "name": "grid-memory",
   "version": "1.2.3",
-  "description": "Persistent shared memory for multi-agent teams — append-only writes, relevance-weighted reads, TTL pruning, context injection",
+  "description": "Persistent shared memory for multi-agent teams \u2014 append-only writes, relevance-weighted reads, TTL pruning, context injection",
   "main": "sdk/node/src/index.js",
   "scripts": {
     "test": "node tests/test-store.js",
@@ -69,7 +69,8 @@
     "README.md"
   ],
   "dependencies": {
-    "marked": "^18.0.4"
+    "marked": "^18.0.4",
+    "better-sqlite3": "^11.10.0"
   },
   "author": "Nick Stoianov <nick@criticalpathfoundry.com>"
 }
