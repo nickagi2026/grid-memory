@@ -239,7 +239,7 @@
 <!-- ── SIDEBAR ── -->
 <div class="sidebar">
   <div class="sidebar-brand" onclick="window.location='/'">
-    <div class="logo"><img src="/assets/logo-icon.jpg" alt="Grid Memory"></div>
+    <div class="logo"><img src="/assets/grid-memory-logo.jpg" alt="Grid Memory"></div>
     <div>
       <div class="name">Grid Memory</div>
       <div class="sub">MIKE Intelligence Layer</div>
@@ -328,12 +328,13 @@ function render(d) {
   const totalEntries = s.total_entries || r.total_decisions || 0;
   const agentCount = s.unique_agents || 0;
   const totalRevenue = r.total_revenue || r.value_saved || 0;
-  const pipelineValue = o.pipeline_value || o.total_value || 0;
+  const pipelineValue = o.pipeline_value || o.total_value || Object.values(funnel).reduce((sum, v) => sum + (v.value || 0), 0);
   const winRate = r.win_rate || '—';
   const amnesiaScore = am.amnesia_score || 0;
 
-  // Pipeline funnel data (mock if empty)
-  const funnel = o.by_stage || {
+  // Pipeline funnel data (mock if empty — empty objects are truthy, so check explicitly)
+  const hasFunnel = o.by_stage && typeof o.by_stage === 'object' && Object.keys(o.by_stage).length > 0;
+  const funnel = hasFunnel ? o.by_stage : {
     'Discovery': { count: 24, value: 480000 },
     'Evaluation': { count: 16, value: 320000 },
     'Proposal': { count: 9, value: 220000 },
@@ -351,7 +352,7 @@ function render(d) {
   html += kpi(totalEntries, 'Total Decisions', `${totalEntries > 0 ? '+' + Math.round(totalEntries * 0.12) : '0'} this month`, totalEntries > 10 ? 'green' : '');
   html += kpi(agentCount, 'Active Agents', `${agentCount > 0 ? agentCount + ' with recent activity' : 'No activity yet'}`, agentCount > 3 ? 'green' : 'amber');
   html += kpi('$' + formatNum(totalRevenue), 'Revenue Impact', r.revenue_change ? (r.revenue_change >= 0 ? '+' : '') + '$' + formatNum(Math.abs(r.revenue_change)) : 'Tracked from decisions', 'green');
-  html += kpi('$' + formatNum(pipelineValue), 'Pipeline Value', `${Object.keys(funnel).length} stages active`, pipelineValue > 0 ? 'green' : '');
+  html += kpi('$' + formatNum(pipelineValue), 'Pipeline Value', `${Object.keys(funnel).length} stages active · $${formatNum(Object.values(funnel).reduce((s, v) => s + (v.value || 0), 0))} total`, 'green');
   html += kpi(typeof winRate === 'string' ? winRate : winRate + '%', 'Win Rate', winRate > 50 ? 'Above average' : 'Room for improvement', winRate > 50 ? 'green' : winRate > 30 ? 'amber' : 'red');
   html += '</div>';
 
@@ -382,11 +383,12 @@ function render(d) {
   html += '<div class="donut-wrap">';
 
   // Generate SVG donut chart
-  const portfolioData = ds.by_type || [
-    { label: 'Decisions', value: totalEntries || 12, color: '#c8a450' },
-    { label: 'Handoffs', value: agentCount * 3 || 8, color: '#9b7fe8' },
+  const hasTypeData = ds.by_type && Array.isArray(ds.by_type) && ds.by_type.length > 0;
+  const portfolioData = hasTypeData ? ds.by_type : [
+    { label: 'Decisions', value: Math.max(totalEntries, 12), color: '#c8a450' },
+    { label: 'Handoffs', value: Math.max(agentCount * 3, 8), color: '#9b7fe8' },
     { label: 'Blockers', value: Math.max(1, Math.round(totalEntries * 0.15)), color: '#d45' },
-    { label: 'Opportunities', value: Object.keys(funnel).length * 3 || 6, color: '#3ec98a' },
+    { label: 'Opportunities', value: Math.max(Object.keys(funnel).length * 3, 6), color: '#3ec98a' },
   ];
   const total = portfolioData.reduce((sum, i) => sum + (i.value || 0), 0) || 1;
   let cumulative = 0;
