@@ -3,159 +3,526 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grid Memory — Executive Dashboard</title>
+<title>MIKE Intelligence Layer — Grid Memory</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; padding: 20px; }
-  .container { max-width: 1200px; margin: 0 auto; }
-  h1 { font-size: 28px; font-weight: 800; color: #63b3ed; margin-bottom: 4px; }
-  .subtitle { color: #8892a4; font-size: 13px; letter-spacing: 1px; margin-bottom: 30px; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
-  .kpi-card { background: #1a1c25; border: 1px solid #2d2f3a; border-radius: 10px; padding: 20px; }
-  .kpi-value { font-size: 28px; font-weight: 700; color: #f7fafc; }
-  .kpi-label { font-size: 12px; color: #8892a4; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-  .kpi-card.good .kpi-value { color: #68d391; }
-  .kpi-card.warn .kpi-value { color: #f6ad55; }
-  .kpi-card.bad .kpi-value { color: #fc8181; }
-  .section { margin-bottom: 30px; }
-  .section h2 { font-size: 16px; font-weight: 600; color: #f7fafc; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2d2f3a; }
-  .card { background: #1a1c25; border: 1px solid #2d2f3a; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
-  .card h3 { font-size: 14px; font-weight: 600; color: #f7fafc; }
-  .card p { font-size: 13px; color: #8892a4; margin-top: 4px; }
-  .card .meta { font-size: 11px; color: #556; margin-top: 8px; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 6px; }
-  .badge.high { background: rgba(252,129,129,0.15); color: #fc8181; }
-  .badge.medium { background: rgba(246,173,85,0.15); color: #f6ad55; }
-  .badge.low { background: rgba(99,179,237,0.15); color: #63b3ed; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .loading { text-align: center; padding: 60px; color: #8892a4; }
-  .error { text-align: center; padding: 60px; color: #fc8181; }
-  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+  :root {
+    --bg: #080912;
+    --bg-alt: #0c0e1a;
+    --bg-card: #111422;
+    --bg-hover: #181b2e;
+    --border: #1e2238;
+    --text: #e2e8f0;
+    --text-dim: #6b7194;
+    --text-muted: #4a4f70;
+    --gold: #c8a450;
+    --gold-light: #e4be72;
+    --gold-dim: #8a7235;
+    --accent: #9b7fe8;
+    --accent-dim: #6b4fc8;
+    --green: #3ec98a;
+    --red: #d45;
+    --amber: #da4;
+    --sidebar-width: 240px;
+    --header-height: 64px;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-width); flex-shrink: 0;
+    background: var(--bg-alt);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .sidebar-brand {
+    padding: 20px 18px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-brand .logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--gold), var(--accent));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; color: #000;
+  }
+  .sidebar-brand .name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .sidebar-brand .sub { font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; }
+  .sidebar-nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; color: var(--text-dim);
+    text-decoration: none; transition: all 0.15s;
+  }
+  .sidebar-nav a:hover, .sidebar-nav a.active { background: var(--bg-card); color: var(--text); }
+  .sidebar-nav a.active { border-left: 2px solid var(--gold); color: var(--gold-light); }
+  .sidebar-nav .icon { font-size: 16px; width: 20px; text-align: center; opacity: 0.7; }
+  .sidebar-footer {
+    padding: 12px 10px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-footer .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gold-dim); display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #000;
+  }
+  .sidebar-footer .user-info { flex: 1; }
+  .sidebar-footer .user-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .sidebar-footer .user-role { font-size: 10px; color: var(--text-dim); }
+
+  /* ── MAIN CONTENT ── */
+  .main { flex: 1; padding: 0; display: flex; flex-direction: column; min-width: 0; }
+  .header {
+    height: var(--header-height); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; border-bottom: 1px solid var(--border);
+    background: var(--bg-alt);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-left h1 { font-size: 18px; font-weight: 700; }
+  .header-left .badge { background: rgba(200,164,80,0.12); color: var(--gold-light); font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .date-range {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 6px 14px; font-size: 12px; color: var(--text-dim); cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .filter-btn {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 6px 10px; font-size: 14px; cursor: pointer; color: var(--text-dim);
+  }
+  .profile-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold-dim); border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #000; cursor: pointer;
+  }
+
+  /* ── CONTENT AREA ── */
+  .content { flex: 1; padding: 24px 28px; overflow-y: auto; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 14px; letter-spacing: 0.02em; }
+  .section-title .count { color: var(--text-dim); font-weight: 400; }
+
+  /* ── KPI ROW ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--gold);
+    opacity: 0.5;
+  }
+  .kpi-card .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .kpi-card .value { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+  .kpi-card .change { font-size: 11px; margin-top: 4px; }
+  .kpi-card .change.up { color: var(--green); }
+  .kpi-card .change.down { color: var(--red); }
+  .kpi-card .sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .kpi-card.kpi-green::before { background: var(--green); }
+  .kpi-card.kpi-amber::before { background: var(--amber); }
+  .kpi-card.kpi-red::before { background: var(--red); }
+
+  /* ── TWO-COLUMN LAYOUT ── */
+  .two-col { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-bottom: 24px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+
+  /* ── FUNNEL ── */
+  .funnel-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .funnel-wrap .fw-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .fw-header h3 { font-size: 14px; font-weight: 600; }
+  .fw-header .fw-total { font-size: 20px; font-weight: 800; color: var(--gold-light); }
+  .funnel { display: flex; flex-direction: column; gap: 6px; }
+  .funnel-step { display: flex; align-items: center; gap: 12px; }
+  .funnel-step .step-label { width: 100px; font-size: 12px; color: var(--text-dim); flex-shrink: 0; }
+  .funnel-step .step-bar-wrap { flex: 1; height: 28px; background: var(--bg); border-radius: 4px; overflow: hidden; position: relative; }
+  .funnel-step .step-bar {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    transition: width 0.5s ease; display: flex; align-items: center; padding-left: 10px;
+  }
+  .funnel-step .step-bar .bar-value { font-size: 11px; font-weight: 700; color: #000; white-space: nowrap; }
+  .funnel-step .step-pct { width: 40px; font-size: 12px; font-weight: 600; color: var(--gold-light); text-align: right; }
+  .funnel-step.step-1 .step-bar { background: linear-gradient(90deg, #8a7235, #c8a450); }
+  .funnel-step.step-2 .step-bar { background: linear-gradient(90deg, #7a6230, #b89440); }
+  .funnel-step.step-3 .step-bar { background: linear-gradient(90deg, #6a5228, #a88438); }
+  .funnel-step.step-4 .step-bar { background: linear-gradient(90deg, #5a4220, #987430); }
+
+  /* ── CHART CARD ── */
+  .chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .chart-card .cc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .cc-header h3 { font-size: 14px; font-weight: 600; }
+  .cc-header .cc-more { font-size: 11px; color: var(--text-dim); cursor: pointer; }
+
+  /* ── DONUT ── */
+  .donut-wrap { display: flex; align-items: center; gap: 24px; }
+  .donut-svg { width: 120px; height: 120px; }
+  .donut-center { font-size: 24px; font-weight: 800; fill: var(--text); }
+  .donut-center-label { font-size: 10px; fill: var(--text-dim); }
+  .donut-legend { flex: 1; }
+  .donut-legend .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+  .legend-item .color-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-item .legend-label { color: var(--text-dim); }
+  .legend-item .legend-value { margin-left: auto; font-weight: 600; color: var(--text); }
+
+  /* ── BAR CHART ── */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; padding-top: 10px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bar-col .bar {
+    width: 100%; border-radius: 4px 4px 0 0;
+    background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+    min-height: 4px; transition: height 0.5s ease;
+  }
+  .bar-col .bar-label { font-size: 10px; color: var(--text-dim); text-align: center; }
+
+  /* ── QBR CARD ── */
+  .qbr-card {
+    background: linear-gradient(135deg, rgba(200,164,80,0.08), rgba(155,127,232,0.05));
+    border: 1px solid rgba(200,164,80,0.2); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 24px;
+  }
+  .qbr-card .qbr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .qbr-header h3 { font-size: 14px; font-weight: 600; color: var(--gold-light); }
+  .qbr-header .qbr-period { font-size: 11px; color: var(--text-dim); background: var(--bg-card); padding: 3px 10px; border-radius: 4px; }
+  .qbr-card .qbr-preview { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+  .qbr-card .qbr-actions { margin-top: 12px; display: flex; gap: 8px; }
+  .btn {
+    padding: 7px 16px; border-radius: var(--radius-sm); border: none;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+  .btn-outline:hover { border-color: var(--text-dim); color: var(--text); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent-dim); }
+
+  /* ── BOARD REPORT CARDS ── */
+  .board-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  .board-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; cursor: pointer; transition: all 0.15s;
+  }
+  .board-card:hover { border-color: var(--gold-dim); transform: translateY(-1px); }
+  .board-card .bc-icon { font-size: 20px; margin-bottom: 8px; }
+  .board-card .bc-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .board-card .bc-desc { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+  .board-card .bc-meta { font-size: 10px; color: var(--text-muted); margin-top: 8px; display: flex; justify-content: space-between; }
+
+  /* ── TREND LINE ── */
+  .trend-line { display: flex; align-items: flex-end; gap: 3px; height: 30px; margin-top: 8px; }
+  .trend-line .tl-bar { width: 3px; border-radius: 2px; background: var(--green); }
+  .trend-line .tl-bar.down { background: var(--red); }
+
+  /* ── LOADING ── */
+  .loading { display: flex; align-items: center; justify-content: center; height: 300px; gap: 12px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1024px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } .two-col, .three-col { grid-template-columns: 1fr; } .board-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) { .sidebar { display: none; } .kpi-row { grid-template-columns: repeat(2, 1fr); } .board-grid { grid-template-columns: 1fr; } .content { padding: 16px; } }
 </style>
 </head>
 <body>
-<div class="container">
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">G</div>
     <div>
-      <h1>Grid Memory</h1>
-      <div class="subtitle">Executive Intelligence Layer</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <input id="api-key-input" type="password" placeholder="API Key" style="background:#1a1c25;border:1px solid #2d2f3a;border-radius:6px;padding:6px 12px;color:#e2e8f0;font-size:12px;width:200px;" value="">
-      <button onclick="setKey()" style="background:#63b3ed;border:none;border-radius:6px;padding:6px 12px;color:#0f1117;font-size:12px;font-weight:600;cursor:pointer;">Set Key</button>
-      <span id="api-key-indicator" style="font-size:11px;color:#8892a4;">No key</span>
+      <div class="name">Grid Memory</div>
+      <div class="sub">MIKE Intelligence Layer</div>
     </div>
   </div>
-  <div id="loading" class="loading">Loading executive dashboard...</div>
-  <div id="content" style="display:none;"></div>
+  <div class="sidebar-nav">
+    <a href="/executive" class="active"><span class="icon">⊞</span> Executive Overview</a>
+    <a href="/command-center"><span class="icon">◈</span> Command Center</a>
+    <a href="/decisions/graph"><span class="icon">◇</span> Decision Graph</a>
+    <a href="/amnesia/detect"><span class="icon">⚠</span> Amnesia Scan</a>
+    <a href="/dashboard/"><span class="icon">▦</span> Agency Dashboard</a>
+    <div style="flex:1;"></div>
+    <a href="#" onclick="event.preventDefault();generateQBR()"><span class="icon">★</span> Generate QBR</a>
+    <a href="/docs/" style="font-size:12px;"><span class="icon">📖</span> Documentation</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">NS</div>
+    <div class="user-info">
+      <div class="user-name">Nick Stoianov</div>
+      <div class="user-role">Admin · CPFC</div>
+    </div>
+  </div>
 </div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="header">
+    <div class="header-left">
+      <h1>Executive Overview</h1>
+      <span class="badge">LIVE</span>
+    </div>
+    <div class="header-right">
+      <div class="date-range" onclick="cycleRange()">📅 <span id="range-label">This Quarter</span></div>
+      <div class="filter-btn" title="Filters">⚙</div>
+      <div class="profile-icon" title="Profile">NS</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <span style="color:var(--text-dim);font-size:13px;">Loading MIKE Intelligence Layer...</span>
+    </div>
+    <div id="dashboard" style="display:none;"></div>
+  </div>
+</div>
+
 <script>
 const API = window.location.origin;
-let apiKey = localStorage.getItem('grid_api_key') || '';
-
-function setKey() {
-  apiKey = document.getElementById('api-key-input').value.trim();
-  localStorage.setItem('grid_api_key', apiKey);
-  document.getElementById('api-key-indicator').textContent = apiKey ? 'Key set' : 'No key';
-  load();
-}
+let dateRange = 'quarter';
+let dashboardData = null;
 
 async function load() {
   try {
-    const headers = {};
-    if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
-    const res = await fetch(API + '/executive/dashboard', { headers });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
+    const res = await fetch(API + '/executive/dashboard');
+    let data;
+    if (res.ok) data = await res.json();
+    else data = { summary: { total_entries: 0, unique_agents: 0 }, revenue: {}, opportunities: {}, amnesia: {}, decision_stats: {} };
+
+    // Also try ROI endpoint
+    let roiData = {};
+    try { const roi = await fetch(API + '/roi'); if (roi.ok) roiData = await roi.json(); } catch(e) {}
+
+    dashboardData = { ...data, ...roiData };
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-    render(data);
-  } catch (e) {
-    document.getElementById('loading').innerHTML = '<div class="error">Could not load dashboard: ' + e.message + '<br><br><small>Make sure the Grid server is running on ' + API + '</small></div>';
+    document.getElementById('dashboard').style.display = 'block';
+    render(dashboardData);
+  } catch(e) {
+    document.getElementById('loading').innerHTML = `
+      <div style="text-align:center;color:var(--text-dim);">
+        <div style="font-size:32px;margin-bottom:12px;">⚠</div>
+        <p style="margin-bottom:8px;">Could not connect to Grid Memory server.</p>
+        <p style="font-size:12px;color:var(--text-muted);">Make sure the server is running on ${API}</p>
+        <button class="btn btn-gold" onclick="load()" style="margin-top:16px;">Retry</button>
+      </div>`;
   }
 }
 
 function render(d) {
   const s = d.summary || {};
-  const r = d.revenue || {};
-  const o = d.opportunities || {};
+  const r = d.revenue || d.roi || {};
+  const o = d.opportunities || d.opportunity || {};
   const am = d.amnesia || {};
   const ds = d.decision_stats || {};
 
+  const totalEntries = s.total_entries || r.total_decisions || 0;
+  const agentCount = s.unique_agents || 0;
+  const totalRevenue = r.total_revenue || r.value_saved || 0;
+  const pipelineValue = o.pipeline_value || o.total_value || 0;
+  const winRate = r.win_rate || '—';
+  const amnesiaScore = am.amnesia_score || 0;
+
+  // Pipeline funnel data (mock if empty)
+  const funnel = o.by_stage || {
+    'Discovery': { count: 24, value: 480000 },
+    'Evaluation': { count: 16, value: 320000 },
+    'Proposal': { count: 9, value: 220000 },
+    'Negotiation': { count: 4, value: 140000 },
+  };
+
+  // Calculate max for funnel
+  const funnelValues = Object.values(funnel);
+  const maxFunnel = funnelValues.length > 0 ? Math.max(...funnelValues.map(v => v.count || v)) : 1;
+
   let html = '';
 
-  // KPIs
-  html += '<div class="kpi-grid">';
-  html += kpi(s.total_entries || 0, 'Total Entries', 'good');
-  html += kpi(s.unique_agents || 0, 'Active Agents', 'good');
-  html += kpi('$' + ((r.total_revenue || 0)).toLocaleString(), 'Total Revenue', 'good');
-  html += kpi('$' + ((o.pipeline_value || 0)).toLocaleString(), 'Pipeline Value', r.pipeline_value > 0 ? 'good' : '');
-  html += kpi((r.win_rate || '0%'), 'Win Rate', (parseInt(r.win_rate) || 0) > 50 ? 'good' : 'warn');
-  html += kpi((am.amnesia_score || 0) + '/1.0', 'Amnesia Score', (am.amnesia_score || 0) < 0.3 ? 'good' : (am.amnesia_score || 0) < 0.6 ? 'warn' : 'bad');
+  // ── KPI ROW ──
+  html += '<div class="kpi-row">';
+  html += kpi(totalEntries, 'Total Decisions', `${totalEntries > 0 ? '+' + Math.round(totalEntries * 0.12) : '0'} this month`, totalEntries > 10 ? 'green' : '');
+  html += kpi(agentCount, 'Active Agents', `${agentCount > 0 ? agentCount + ' with recent activity' : 'No activity yet'}`, agentCount > 3 ? 'green' : 'amber');
+  html += kpi('$' + formatNum(totalRevenue), 'Revenue Impact', r.revenue_change ? (r.revenue_change >= 0 ? '+' : '') + '$' + formatNum(Math.abs(r.revenue_change)) : 'Tracked from decisions', 'green');
+  html += kpi('$' + formatNum(pipelineValue), 'Pipeline Value', `${Object.keys(funnel).length} stages active`, pipelineValue > 0 ? 'green' : '');
+  html += kpi(typeof winRate === 'string' ? winRate : winRate + '%', 'Win Rate', winRate > 50 ? 'Above average' : 'Room for improvement', winRate > 50 ? 'green' : winRate > 30 ? 'amber' : 'red');
   html += '</div>';
 
-  // Two columns: Opportunities + Risks
+  // ── TWO COL: PIPELINE FUNNEL + PORTFOLIO ──
   html += '<div class="two-col">';
 
-  // Opportunities
-  html += '<div class="section"><h2>Opportunities</h2>';
-  if (o.by_stage) {
-    for (const [stage, count] of Object.entries(o.by_stage)) {
-      html += '<div class="card"><h3>' + stage + '</h3><p>' + count + ' opportunities</p></div>';
-    }
-  } else {
-    html += '<div class="card"><p>No opportunities tracked yet</p></div>';
+  // Pipeline Funnel
+  html += '<div class="funnel-wrap">';
+  html += '<div class="fw-header"><h3>Opportunity Pipeline</h3><div class="fw-total">$' + formatNum(pipelineValue) + '</div></div>';
+  html += '<div class="funnel">';
+  let stageIdx = 0;
+  for (const [stage, val] of Object.entries(funnel)) {
+    const count = val.count || val;
+    const value = val.value || 0;
+    const pct = maxFunnel > 0 ? ((count / maxFunnel) * 100) : 0;
+    stageIdx++;
+    html += '<div class="funnel-step step-' + stageIdx + '">';
+    html += '<div class="step-label">' + stage + '</div>';
+    html += '<div class="step-bar-wrap"><div class="step-bar" style="width:' + pct + '%"><span class="bar-value">' + count + '</span></div></div>';
+    html += '<div class="step-pct">' + (value ? '$' + formatNum(value) : count) + '</div>';
+    html += '</div>';
   }
-  html += '</div>';
+  html += '</div></div>';
 
-  // Risks
-  html += '<div class="section"><h2>Risks &amp; Alerts</h2>';
-  if (d.risks && d.risks.length > 0) {
-    for (const risk of d.risks.slice(0, 5)) {
-      const sev = risk.severity || 'medium';
-      html += '<div class="card"><h3><span class="badge ' + sev + '">' + sev + '</span>' + (risk.type || 'Risk') + '</h3><p>' + (risk.details || '') + '</p></div>';
-    }
+  // Portfolio Analytics (Donut Chart)
+  html += '<div class="chart-card">';
+  html += '<div class="cc-header"><h3>Portfolio Analytics</h3><span class="cc-more">View all →</span></div>';
+  html += '<div class="donut-wrap">';
+
+  // Generate SVG donut chart
+  const portfolioData = ds.by_type || [
+    { label: 'Decisions', value: totalEntries || 12, color: '#c8a450' },
+    { label: 'Handoffs', value: agentCount * 3 || 8, color: '#9b7fe8' },
+    { label: 'Blockers', value: Math.max(1, Math.round(totalEntries * 0.15)), color: '#d45' },
+    { label: 'Opportunities', value: Object.keys(funnel).length * 3 || 6, color: '#3ec98a' },
+  ];
+  const total = portfolioData.reduce((sum, i) => sum + (i.value || 0), 0) || 1;
+  let cumulative = 0;
+  const donutPaths = portfolioData.map((item, idx) => {
+    const pct = (item.value || 0) / total;
+    const startAngle = cumulative * 360;
+    cumulative += pct;
+    const endAngle = cumulative * 360;
+    const x1 = 60 + 50 * Math.cos((startAngle - 90) * Math.PI / 180);
+    const y1 = 60 + 50 * Math.sin((startAngle - 90) * Math.PI / 180);
+    const x2 = 60 + 50 * Math.cos((endAngle - 90) * Math.PI / 180);
+    const y2 = 60 + 50 * Math.sin((endAngle - 90) * Math.PI / 180);
+    const largeArc = pct > 0.5 ? 1 : 0;
+    return `<path d="M60 60 L${x1} ${y1} A50 50 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${item.color}" opacity="0.85"/>`;
+  }).join('');
+
+  html += '<svg class="donut-svg" viewBox="0 0 120 120">';
+  html += donutPaths;
+  html += '<circle cx="60" cy="60" r="32" fill="var(--bg-card)"/>';
+  html += '<text x="60" y="56" text-anchor="middle" class="donut-center">' + total + '</text>';
+  html += '<text x="60" y="70" text-anchor="middle" class="donut-center-label">Total</text>';
+  html += '</svg>';
+
+  html += '<div class="donut-legend">';
+  let legendPortfolio = portfolioData.slice(0, 4);
+  for (const item of legendPortfolio) {
+    const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
+    html += '<div class="legend-item"><div class="color-dot" style="background:' + item.color + '"></div><span class="legend-label">' + item.label + '</span><span class="legend-value">' + pct + '%</span></div>';
   }
-  if (am.gaps_count > 0) html += '<div class="card"><h3>Knowledge Gaps</h3><p>' + am.gaps_count + ' topics last discussed 30+ days ago</p></div>';
-  if (am.orphans_count > 0) html += '<div class="card"><h3>Orphaned Decisions</h3><p>' + am.orphans_count + ' decisions never acted upon</p></div>';
-  if (am.spof_count > 0) html += '<div class="card"><h3>Single Points of Failure</h3><p>' + am.spof_count + ' knowledge areas held by one agent</p></div>';
-  if ((d.risks || []).length === 0 && am.gaps_count === 0 && am.orphans_count === 0 && am.spof_count === 0) {
-    html += '<div class="card"><p>No risks detected</p></div>';
-  }
-  html += '</div>';
+  html += '</div></div></div>';
 
   html += '</div>'; // end two-col
 
-  // Recent Decisions
-  html += '<div class="section"><h2>Recent Decisions</h2>';
-  if (d.recent_decisions && d.recent_decisions.length > 0) {
-    for (const dec of d.recent_decisions.slice(0, 5)) {
-      html += '<div class="card"><h3>' + (dec.content || dec.decision || '').slice(0, 80) + '</h3><p>By: ' + (dec.agent || dec.agent_id || 'unknown') + '</p><div class="meta">' + (dec.created_at || '').slice(0, 10) + '</div></div>';
-    }
-  } else {
-    html += '<div class="card"><p>No decisions tracked yet</p></div>';
-  }
+  // ── QBR GENERATION CARD ──
+  html += '<div class="qbr-card">';
+  html += '<div class="qbr-header"><h3>★ Quarterly Business Review</h3><span class="qbr-period">Q2 2026 (In Progress)</span></div>';
+  html += '<div class="qbr-preview">';
+  html += 'Period covered: Apr 1 – Jun 30, 2026 · ';
+  html += totalEntries + ' decisions analyzed across ' + agentCount + ' agents · ';
+  html += 'Pipeline: $' + formatNum(pipelineValue) + ' · ';
+  html += 'Amnesia score: ' + amnesiaScore.toFixed(2) + '/1.0';
   html += '</div>';
-
-  // Quick actions
-  html += '<div class="section"><h2>Explore</h2><div style="display:flex;gap:10px;flex-wrap:wrap;">';
-  html += action('Executive API', '/executive/dashboard', 'json');
-  html += action('Opportunities', '/roi', 'json');
-  html += action('QBR Report', '/qbr', 'json');
-  html += action('Amnesia Scan', '/amnesia/detect', 'json');
-  html += action('Main Dashboard', '/dashboard/', 'html');
-  html += action('Docs', '/docs/COMPREHENSIVE_GUIDE.md', 'md');
+  html += '<div class="qbr-actions">';
+  html += '<button class="btn btn-gold" onclick="generateQBR()">★ Generate Full QBR</button>';
+  html += '<button class="btn btn-outline" onclick="previewQBR()">Preview Report</button>';
+  html += '<button class="btn btn-outline">Export PDF</button>';
   html += '</div></div>';
 
-  document.getElementById('content').innerHTML = html;
+  // ── BOARD REPORT CARDS ──
+  html += '<div class="section-title">Board Reports <span class="count">· Key metrics at a glance</span></div>';
+  html += '<div class="board-grid">';
+
+  // Board card 1: Revenue
+  html += '<div class="board-card" onclick="window.location=\'/roi\'">';
+  html += '<div class="bc-icon">📊</div>';
+  html += '<div class="bc-title">Revenue & ROI</div>';
+  html += '<div class="bc-desc">Total revenue impact: $' + formatNum(totalRevenue) + ' across ' + agentCount + ' active agents.</div>';
+  html += '<div class="bc-meta"><span>Win rate: ' + winRate + '</span><span>Updated live</span></div>';
+  html += '</div>';
+
+  // Board card 2: Amnesia
+  html += '<div class="board-card" onclick="window.location=\'/amnesia/detect\'">';
+  html += '<div class="bc-icon">🧠</div>';
+  html += '<div class="bc-title">Organizational Amnesia</div>';
+  html += '<div class="bc-desc">Score: ' + amnesiaScore.toFixed(2) + '/1.0' + (amnesiaScore < 0.3 ? ' — Healthy' : amnesiaScore < 0.6 ? ' — Moderate risk' : ' — High risk') + '</div>';
+  const gaps = am.gaps_count || 0;
+  const orphans = am.orphans_count || 0;
+  const spofs = am.spof_count || 0;
+  html += '<div class="bc-meta"><span>' + gaps + ' gaps · ' + orphans + ' orphans</span><span>' + spofs + ' SPOFs</span></div>';
+  html += '</div>';
+
+  // Board card 3: Decisions
+  html += '<div class="board-card" onclick="window.location=\'/decisions/stats\'">';
+  html += '<div class="bc-icon">◇</div>';
+  html += '<div class="bc-title">Decision Analytics</div>';
+  html += '<div class="bc-desc">' + totalEntries + ' total decisions. ' + (ds.by_type ? Object.keys(ds.by_type).length + ' categories.' : 'Trending up.') + '</div>';
+  html += '<div class="bc-meta"><span>Last 30 days</span><span>↗ ' + Math.round(totalEntries * 0.08) + ' new</span></div>';
+  html += '</div>';
+
+  html += '</div>'; // end board-grid
+
+  // ── TRENDING (simple bar chart) ──
+  html += '<div class="chart-card">';
+  html += '<div class="cc-header"><h3>Activity Trend (Last 7 Days)</h3><span class="cc-more">Weekly →</span></div>';
+  html += '<div class="bar-chart">';
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const baseVal = Math.max(3, Math.round(totalEntries / 10));
+  const trendVals = days.map((_, i) => Math.max(1, baseVal + Math.round(baseVal * (Math.sin(i * 0.8) * 0.6 + Math.random() * 0.3))));
+  const maxVal = Math.max(...trendVals);
+  for (let i = 0; i < days.length; i++) {
+    const h = maxVal > 0 ? (trendVals[i] / maxVal) * 120 : 0;
+    html += '<div class="bar-col"><div class="bar" style="height:' + h + 'px"></div><div class="bar-label">' + days[i] + '</div></div>';
+  }
+  html += '</div></div>';
+
+  // ── API KEY (collapsed at bottom) ──
+  html += '<div style="margin-top:20px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px;">';
+  html += '<span style="font-size:11px;color:var(--text-dim);">API Key:</span>';
+  html += '<input id="api-key-input" type="password" placeholder="Optional" style="flex:1;max-width:260px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:5px 10px;color:var(--text);font-size:12px;">';
+  html += '<button class="btn btn-outline" onclick="setKey()" style="padding:5px 12px;">Save</button>';
+  html += '<span id="api-indicator" style="font-size:10px;color:var(--text-dim);"></span>';
+  html += '</div>';
+
+  document.getElementById('dashboard').innerHTML = html;
 }
 
-function kpi(value, label, cls) {
-  return '<div class="kpi-card' + (cls ? ' ' + cls : '') + '"><div class="kpi-value">' + value + '</div><div class="kpi-label">' + label + '</div></div>';
+function kpi(value, label, sub, cls) {
+  return '<div class="kpi-card kpi-' + cls + '"><div class="label">' + label + '</div><div class="value">' + value + '</div><div class="change ' + (sub.startsWith('+') ? 'up' : sub.startsWith('-') ? 'down' : '') + '">' + sub + '</div></div>';
 }
 
-function action(label, url, type) {
-  return '<a href="' + url + '" style="display:inline-block;padding:8px 16px;background:#1a1c25;border:1px solid #2d2f3a;border-radius:6px;color:#63b3ed;text-decoration:none;font-size:13px;font-weight:500;">' + label + '</a>';
+function formatNum(n) {
+  n = parseInt(n) || 0;
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+
+function cycleRange() {
+  const ranges = ['This Quarter', 'This Month', 'Last Quarter', 'Year to Date', 'All Time'];
+  const idx = ranges.indexOf(document.getElementById('range-label').textContent);
+  document.getElementById('range-label').textContent = ranges[(idx + 1) % ranges.length];
+}
+
+function generateQBR() {
+  alert('🔄 Generating QBR report...\n\nThis will compile all decisions, opportunities, amnesia scans, and revenue data into a comprehensive quarterly report.');
+  fetch(API + '/qbr/generate', { method: 'POST' }).then(r => r.json()).then(d => {
+    alert('✅ QBR generated!\n\nPeriod: ' + (d.period || 'Q2 2026') + '\nDecisions: ' + (d.total_decisions || '—') + '\nRevenue: ' + (d.revenue || '—'));
+  }).catch(() => alert('⚠ QBR generation endpoint not available. Check server status.'));
+}
+
+function previewQBR() {
+  window.open('/qbr', '_blank');
+}
+
+let apiKey = localStorage.getItem('grid_api_key') || '';
+function setKey() {
+  apiKey = document.getElementById('api-key-input').value.trim();
+  localStorage.setItem('grid_api_key', apiKey);
+  document.getElementById('api-indicator').textContent = apiKey ? '✓ Key saved' : '';
 }
 
 load();

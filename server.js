@@ -2,12 +2,23 @@
 /**
  * grid-memory/server.js
  *
- * HTTP wrapper for The Grid. Exposes the store.js API as REST endpoints.
+ * HTTP/HTTPS wrapper for The Grid. Exposes the store.js API as REST endpoints
+ * and provides an OpenAI-compatible proxy for transparent memory injection.
  *
  * Usage:
- *   node server.js                    # listens on 0.0.0.0:8080
+ *   node server.js                    # listens on 0.0.0.0:8080 (HTTP)
  *   PORT=9090 node server.js         # custom port
+ *   SSL_CERT=/path/to/cert.pem SSL_KEY=/path/to/key.pem node server.js  # HTTPS
  *   GRID_STORE_DIR=/data node server.js  # custom data directory
+ *
+ * ⚠️  Security — HTTPS is REQUIRED for any non-isolated deployment:
+ *   The Grid proxies API keys and message content. Plain HTTP leaks them to anyone
+ *   who can observe the network (same machine, same LAN, same cloud VPC).
+ *
+ *   ALWAYS use one of:
+ *   1. SSL_CERT + SSL_KEY env vars (built-in HTTPS)
+ *   2. Reverse proxy with TLS termination (nginx, Caddy, Cloudflare Tunnel)
+ *   3. Encrypted tunnel (Tailscale Funnel, Cloudflare Tunnel, ngrok)
  *
  * Endpoints:
  *   POST /write   { agent_id, type, content, tags, ttl_seconds, session_id, parent_entry }
@@ -20,6 +31,7 @@
  */
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { Grid } = require('./reference/store.js');
@@ -45,6 +57,28 @@ const setupWizard = require('./setup-wizard.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 const HOST = process.env.HOST || '0.0.0.0';
+
+// ─── SSL / HTTPS Support ──────────────────────────────────────────────────
+const SSL_CERT_PATH = process.env.SSL_CERT || '';
+const SSL_KEY_PATH  = process.env.SSL_KEY  || '';
+const SSL_CA_PATH   = process.env.SSL_CA   || '';   // optional CA bundle
+
+const useSSL = !!(SSL_CERT_PATH && SSL_KEY_PATH);
+let sslOptions = null;
+if (useSSL) {
+  try {
+    sslOptions = {
+      key:  fs.readFileSync(SSL_KEY_PATH, 'utf-8'),
+      cert: fs.readFileSync(SSL_CERT_PATH, 'utf-8'),
+    };
+    if (SSL_CA_PATH) {
+      sslOptions.ca = fs.readFileSync(SSL_CA_PATH, 'utf-8');
+    }
+  } catch (err) {
+    console.error('❌ Failed to load SSL certificate/key:', err.message);
+    process.exit(1);
+  }
+}
 
 const grid = new Grid();
 
@@ -220,6 +254,31 @@ function registerIntelligenceRoutes() {
       generated_at: new Date().toISOString(),
     });
   }), { rateLimit: 10 });
+
+  // ── Command Center Dashboard (HTML) ──
+  registry.register('GET', '/command-center', 'analyst', async (req, res, grid, gateway, query) => {
+    const htmlPath = path.join(__dirname, 'dashboard', 'command-center.html');
+    try {
+      const html = fs.readFileSync(htmlPath, 'utf-8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Dashboard not found');
+    }
+  });
+
+  registry.register('GET', '/executive', 'analyst', async (req, res, grid, gateway, query) => {
+    const htmlPath = path.join(__dirname, 'dashboard', 'executive.html');
+    try {
+      const html = fs.readFileSync(htmlPath, 'utf-8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('MIKE Intelligence dashboard not found');
+    }
+  });
 
   registry.register('GET', '/decisions/graph', 'analyst', async (req, res, grid, gateway, query) => {
     
@@ -1171,7 +1230,10 @@ function _generateQuickActions(dashboardResult, amnesiaResult) {
 // Share grid instance with the OpenAI proxy
 openaiProxy.setGrid(grid);
 
-const server = http.createServer(handle);
+const protocol = useSSL ? 'https' : 'http';
+const server = useSSL
+  ? https.createServer(sslOptions, handle)
+  : http.createServer(handle);
 
 server.listen(PORT, HOST, () => {
   if (process.env.GRID_SEED_MODE !== 'false') {
@@ -1181,7 +1243,7 @@ server.listen(PORT, HOST, () => {
     }).catch(e => console.error('Seed failed:', e.message));
   }
   console.log(`═══ Grid Memory Server ═══`);
-  console.log(`Listening on http://${HOST}:${PORT}`);
+  console.log(`Listening on ${protocol}://${HOST}:${PORT}  ${useSSL ? '🔒 HTTPS' : '🚨 HTTP — UNENCRYPTED. Set SSL_CERT + SSL_KEY or terminate TLS at a reverse proxy.'}`);
   console.log(`Endpoints:`);
   console.log(`  POST /write           — Write an entry`);
   console.log(`  GET|POST /query       — Query entries`);
@@ -1196,6 +1258,7 @@ server.listen(PORT, HOST, () => {
   console.log(`  GET  /roi               — Instant ROI insights`);
   console.log(`  GET  /mike/dashboard    — MIKE operations dashboard`);
   console.log(`  GET  /executive/dashboard — Executive overview`);
+  console.log(`  GET  /command-center      — Command Center (visual dashboard)`);
   console.log(`  GET  /decisions/graph   — Decision graph`);
   console.log(`  GET  /decisions/stats   — Decision analytics`);
   console.log(`  GET  /qbr               — QBR report (use ?period=Q1-2026)`);
