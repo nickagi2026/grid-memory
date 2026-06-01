@@ -5,13 +5,13 @@ with open("README.md") as f:
 
 setup(
     name="grid-memory",
-    version="1.2.2",
+    version="1.2.4",
     description="Grid Memory — shared persistent memory for multi-agent teams",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="MIKE / Nick",
+    author="Nick Stoianov / Critical Path Foundry",
     author_email="mike@openclaw.ai",
-    url="https://github.com/openclaw/grid-memory",
+    url="https://github.com/nickagi2026/grid-memory",
     packages=find_packages(exclude=[
         'grid_memory.enterprise', 'grid_memory.enterprise.*',
         'grid_memory.hooks', 'grid_memory.hooks.*',
