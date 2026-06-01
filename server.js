@@ -703,6 +703,11 @@ async function handle(req, res) {
   const query = parseQuery(req.url);
 
   try {
+    // Universal rate limit check for ALL routes
+    if (!endpointLimiter(req)) {
+      return json(res, { error: 'Rate limit exceeded. Try again shortly.', code: 'RATE_LIMITED' }, 429);
+    }
+
     // GET /health
     if (method === 'GET' && url === '/health') {
       const info = await grid.info();

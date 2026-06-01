@@ -41,3 +41,7 @@ ROUTE_INVENTORY.md
 
 # Enterprise tier source (private — commercial)
 sdk/python/grid_memory/enterprise/
+
+# Python SDK intelligence modules (commercial tier)
+sdk/python/grid_memory/intel/
+sdk/python/grid_memory/hooks/

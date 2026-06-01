@@ -113,6 +113,24 @@ const ENDPOINT_LIMITS = {
   '/decisions': parseInt(process.env.GRID_RATE_LIMIT_DECISIONS || '20', 10),
   '/qbr': parseInt(process.env.GRID_RATE_LIMIT_QBR || '15', 10),
   '/amnesia': parseInt(process.env.GRID_RATE_LIMIT_AMNESIA || '15', 10),
+  // Core data routes
+  '/write': parseInt(process.env.GRID_RATE_LIMIT_WRITE || '60', 10),
+  '/query': parseInt(process.env.GRID_RATE_LIMIT_QUERY || '120', 10),
+  '/inject': parseInt(process.env.GRID_RATE_LIMIT_INJECT || '60', 10),
+  '/prune': parseInt(process.env.GRID_RATE_LIMIT_PRUNE || '10', 10),
+  '/forget': parseInt(process.env.GRID_RATE_LIMIT_FORGET || '20', 10),
+  '/health': parseInt(process.env.GRID_RATE_LIMIT_HEALTH || '300', 10),
+  '/info': parseInt(process.env.GRID_RATE_LIMIT_INFO || '60', 10),
+  '/drafts': parseInt(process.env.GRID_RATE_LIMIT_DRAFTS || '30', 10),
+  '/dream': parseInt(process.env.GRID_RATE_LIMIT_DREAM || '10', 10),
+  '/provenance': parseInt(process.env.GRID_RATE_LIMIT_PROVENANCE || '60', 10),
+  '/quarantine': parseInt(process.env.GRID_RATE_LIMIT_QUARANTINE || '20', 10),
+  '/cascade': parseInt(process.env.GRID_RATE_LIMIT_CASCADE || '30', 10),
+  '/recall': parseInt(process.env.GRID_RATE_LIMIT_RECALL || '20', 10),
+  '/constitution': parseInt(process.env.GRID_RATE_LIMIT_CONSTITUTION || '10', 10),
+  '/explain': parseInt(process.env.GRID_RATE_LIMIT_EXPLAIN || '30', 10),
+  '/gateway/key': parseInt(process.env.GRID_RATE_LIMIT_GATEWAY_KEY || '10', 10),
+  '/auto-contracts': parseInt(process.env.GRID_RATE_LIMIT_AUTO_CONTRACTS || '20', 10),
 };
 
 function endpointLimiter(req) {
