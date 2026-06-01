@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Grid Memory — Shared Memory for AI Agent Teams</title>
+<meta name="description" content="Grid Memory catches the things your AI agents forget. Persistent shared memory with append-only writes, contradiction detection, decision graphs, and OpenAI-compatible proxy. One line of code.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://gridmemory.io">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬡</text></svg>">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gridmemory.io">
+<meta property="og:title" content="Grid Memory — Shared Memory for AI Agent Teams">
+<meta property="og:description" content="Grid Memory catches the things your AI agents forget. Append-only writes, contradiction detection, decision graphs, and an OpenAI-compatible proxy.">
+<meta property="og:image" content="https://gridmemory.io/og-image.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="853">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Grid Memory — Shared Memory for AI Agent Teams">
+<meta name="twitter:description" content="Persistent shared memory for AI agents. Decisions survive sessions. Contradictions get flagged. One line of code.">
+<meta name="twitter:image" content="https://gridmemory.io/og-image.jpg">
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Grid Memory",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Linux, macOS, Windows",
+  "description": "Persistent shared memory for multi-agent AI teams. Append-only writes, contradiction detection, decision graph, and OpenAI-compatible proxy.",
+  "url": "https://gridmemory.io",
+  "author": {
+    "@type": "Organization",
+    "name": "Critical Path Foundry"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+
+<style>
+:root{
+  --gold:#c8a450;--goldl:#e4be72;--goldd:#7a5e28;
+  --red:#c94040;--amber:#c98a20;--green:#3ec98a;--purple:#9b7fe8;
+  --bg0:#06070c;--bg1:#0a0c12;--bg2:#0f1119;--bg3:#13151f;--bg4:#181b27;
+  --bd:#1d2035;--text:#e8ecf5;--muted:rgba(232,236,245,.72);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:#06070c;color:#e8ecf5;-webkit-font-smoothing:antialiased;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:.9}}
+
+/* ── NAV ── */
+.nav{background:rgba(6,7,12,.92);backdrop-filter:blur(16px);border-bottom:1px solid #1d2035;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px;}
+.nav-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;color:#e8ecf5;text-decoration:none;flex-shrink:0;}
+.nav-logo-hex{color:#c8a450;}
+.nav-links{display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.nav-links a{color:rgba(232,236,245,.72);font-size:13px;text-decoration:none;white-space:nowrap;}
+.nav-links a:hover{color:#e8ecf5;}
+.nav-cta{background:rgba(200,164,80,.12);border:1px solid #7a5e28;color:#e4be72;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;}
+
+/* ── HERO ── */
+.hero{position:relative;overflow:hidden;min-height:480px;display:flex;align-items:center;}
+.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(100deg,rgba(6,7,12,.97) 0%,rgba(6,7,12,.85) 55%,rgba(6,7,12,.3) 100%);}
+.hero-content{position:relative;z-index:2;padding:60px 24px 56px;max-width:680px;width:100%;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(200,164,80,.1);border:1px solid rgba(200,164,80,.3);border-radius:20px;padding:5px 14px;margin-bottom:22px;}
+.hero-badge span{font-family:'JetBrains Mono',monospace;font-size:11px;color:#c8a450;letter-spacing:.1em;}
+.hero-pulse{width:6px;height:6px;border-radius:50%;background:#3ec98a;animation:pulse 2s ease infinite;flex-shrink:0;}
+.hero-h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,6vw,3.6rem);font-weight:900;line-height:1.06;letter-spacing:-.02em;color:#fff;margin-bottom:16px;}
+.hero-h1 em{font-style:italic;color:#c8a450;}
+.hero-sub{font-size:clamp(14px,2vw,16px);color:rgba(255,255,255,.65);margin-bottom:32px;line-height:1.7;max-width:520px;}
+.hero-installs{display:flex;flex-direction:column;gap:9px;margin-bottom:26px;}
+.install-row{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(200,164,80,.22);border-radius:8px;padding:11px 14px;max-width:400px;width:100%;}
+.install-row code{color:#e4be72;font-family:'JetBrains Mono',monospace;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dollar{color:#3ec98a;font-family:monospace;flex-shrink:0;}
+.copy-btn{background:rgba(200,164,80,.1);border:1px solid rgba(200,164,80,.3);color:#e4be72;border-radius:5px;padding:4px 10px;font-size:11px;font-family:monospace;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.copy-btn.ok{background:rgba(62,201,138,.12);border-color:#3ec98a;color:#3ec98a;}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-primary{background:#c8a450;color:#06070c;border-radius:7px;padding:11px 24px;font-size:14px;font-weight:700;text-decoration:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.btn-outline{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:7px;padding:11px 24px;font-size:14px;text-decoration:none;white-space:nowrap;}
+
+/* ── STATS BAND ── */
+.stats-band{background:#0a0c12;border-bottom:1px solid #1d2035;display:flex;flex-wrap:wrap;}
+.stat-item{flex:1 1 120px;padding:20px 16px;text-align:center;border-right:1px solid #1d2035;}
+.stat-item:last-child{border-right:none;}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:#e4be72;display:block;margin-bottom:4px;}
+.stat-lbl{font-size:10px;color:rgba(232,236,245,.65);text-transform:uppercase;letter-spacing:.05em;line-height:1.4;}
+
+/* ── SECTION SCAFFOLDING ── */
+.section{padding:64px 24px;}
+.section-alt{background:#0a0c12;}
+.section-dark{background:#0f1119;}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#c8a450;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';display:block;width:22px;height:1px;background:#c8a450;flex-shrink:0;}
+.sh{font-family:'Playfair Display',serif;font-weight:900;line-height:1.1;color:#e8ecf5;margin-bottom:12px;}
+.sh-xl{font-size:clamp(1.9rem,5vw,3rem);}
+.sh-lg{font-size:clamp(1.6rem,4vw,2.5rem);}
+.sh em{font-style:italic;color:#c8a450;}
+.lead{font-size:15px;color:rgba(232,236,245,.72);line-height:1.75;max-width:520px;margin-bottom:0;}
+
+/* ── PROBLEM ── */
+.problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1d2035;border:1px solid #1d2035;border-radius:12px;overflow:hidden;margin-top:40px;}
+.problem-card{background:#13151f;padding:32px 24px;position:relative;overflow:hidden;}
+.problem-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.p-red::before{background:#c94040;}
+.p-amber::before{background:#c98a20;}
+.p-gold::before{background:#c8a450;}
+.problem-num{font-family:'Playfair Display',serif;font-size:64px;font-weight:900;line-height:1;opacity:.2;position:absolute;top:16px;right:20px;}
+.p-red .problem-num{color:#c94040;}
+.p-amber .problem-num{color:#c98a20;}
+.p-gold .problem-num{color:#c8a450;}
+.problem-label{font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
+.p-red .problem-label{color:#c94040;}
+.p-amber .problem-label{color:#c98a20;}
+.p-gold .problem-label{color:#c8a450;}
+.problem-title{font-size:18px;font-weight:700;color:#e8ecf5;margin-bottom:10px;line-height:1.2;}
+.problem-body{font-size:13px;color:rgba(232,236,245,.72);line-height:1.7;}
+.problem-quote{margin-top:32px;padding:24px 28px;background:rgba(200,164,80,.05);border:1px solid rgba(200,164,80,.15);border-radius:10px;border-left:4px solid #c8a450;}
+.problem-quote p{font-size:15px;color:#e8ecf5;line-height:1.65;}
+.problem-quote strong{color:#e4be72;}
+
+/* ── DEMO ── */
+.demo-wrap{margin-top:40px;}
+.demo-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.demo-tab{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #1d2035;background:transparent;color:rgba(232,236,245,.72);font-family:'DM Sans',sans-serif;transition:all .2s;}
+.demo-tab.active-red{border-color:#c94040;background:rgba(201,64,64,.1);color:#c94040;}
+.demo-tab.active-amber{border-color:#c98a20;background:rgba(201,138,32,.1);color:#c98a20;}
+.demo-tab.active-gold{border-color:#c8a450;background:rgba(200,164,80,.1);color:#e4be72;}
+.demo-split{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:start;}
+.terminal{background:#05060a;border:1px solid #1d2035;border-radius:10px;overflow:hidden;}
+.term-bar{background:#13151f;padding:10px 14px;border-bottom:1px solid #1d2035;display:flex;align-items:center;gap:6px;}
+.term-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.term-title{color:rgba(232,236,245,.72);font-size:11px;margin-left:6px;font-family:'JetBrains Mono',monospace;}
+.term-body{padding:18px 20px;min-height:260px;font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+.term-prompt{display:flex;gap:10px;margin-bottom:8px;}
+.term-dollar{color:#3ec98a;flex-shrink:0;}
+.term-typed{color:#e8ecf5;white-space:pre-wrap;word-break:break-all;}
+.term-cursor{display:inline-block;width:7px;height:14px;background:#e4be72;margin-left:1px;vertical-align:middle;animation:blink .8s step-end infinite;}
+.term-output{line-height:1.8;white-space:pre-wrap;font-size:12px;animation:fadeUp .3s ease;}
+.demo-explain{animation:fadeUp .2s ease;}
+.demo-title{font-size:19px;font-weight:700;line-height:1.25;margin-bottom:12px;}
+.demo-body{font-size:14px;color:rgba(232,236,245,.72);line-height:1.75;margin-bottom:16px;}
+.demo-note{background:#13151f;border-left:3px solid;padding:13px 16px;margin-bottom:16px;border-radius:0 6px 6px 0;}
+.demo-note p{font-size:13px;color:#e8ecf5;line-height:1.6;}
+.demo-link{font-size:13px;text-decoration:none;opacity:.8;}
+.demo-actions{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+/* ── HOW ── */
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#1d2035;border:1px solid #1d2035;border-radius:12px;overflow:hidden;margin:40px 0 32px;}
+.how-step{background:#13151f;padding:28px 22px;}
+.how-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:#c8a450;letter-spacing:.12em;margin-bottom:14px;opacity:.7;}
+.how-step h3{font-size:15px;font-weight:700;color:#e8ecf5;margin-bottom:8px;}
+.how-step p{font-size:13px;color:rgba(232,236,245,.72);line-height:1.65;}
+.how-code{background:#05060a;border:1px solid #1d2035;border-radius:10px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+.how-code-bar{background:#13151f;padding:10px 16px;border-bottom:1px solid #1d2035;color:rgba(232,236,245,.72);font-size:11px;}
+.how-code-body{padding:20px;line-height:1.8;}
+
+/* ── PRICING ── */
+.price-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px;}
+.price-card{background:#13151f;border:1px solid #1d2035;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
+.price-card.featured{border-color:rgba(155,127,232,.35);background:rgba(155,127,232,.03);}
+.price-card-top{padding:26px 22px 20px;}
+.price-tier{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;}
+.price-amount{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:#e8ecf5;line-height:1;margin-bottom:8px;}
+.price-amount span{font-size:14px;font-weight:400;color:rgba(232,236,245,.72);font-family:'DM Sans',sans-serif;}
+.price-desc{font-size:13px;color:rgba(232,236,245,.72);line-height:1.6;margin-top:8px;}
+.price-divider{height:1px;background:#1d2035;}
+.price-features{padding:20px 22px;flex:1;}
+.price-feat{display:flex;gap:10px;margin-bottom:10px;font-size:13px;align-items:flex-start;}
+.price-check{flex-shrink:0;margin-top:1px;}
+.price-feat-text{color:rgba(232,236,245,.78);line-height:1.4;}
+.price-card-bottom{padding:18px 22px;border-top:1px solid #1d2035;}
+.price-btn{display:block;text-align:center;border-radius:7px;padding:10px;font-size:13px;font-weight:600;text-decoration:none;}
+.price-btn-green{background:rgba(62,201,138,.1);border:1px solid rgba(62,201,138,.25);color:#3ec98a;}
+.price-btn-gold{background:rgba(200,164,80,.12);border:1px solid #7a5e28;color:#e4be72;}
+.price-btn-purple{background:rgba(155,127,232,.14);border:1px solid rgba(155,127,232,.35);color:#9b7fe8;}
+
+/* ── MIKE ── */
+.mike-section{background:linear-gradient(160deg,#0d0b1c 0%,#0a0c12 60%);border-top:1px solid rgba(155,127,232,.15);border-bottom:1px solid rgba(155,127,232,.15);}
+.mike-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
+.mike-feats{margin:22px 0;}
+.mike-feat{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;}
+.mike-feat-icon{width:22px;height:22px;border-radius:50%;background:rgba(155,127,232,.15);border:1px solid rgba(155,127,232,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#9b7fe8;font-size:11px;margin-top:1px;}
+.mike-feat-text h4{font-size:14px;font-weight:600;color:#e8ecf5;margin-bottom:2px;}
+.mike-feat-text p{font-size:12px;color:rgba(232,236,245,.72);line-height:1.5;}
+.mike-cta{background:rgba(155,127,232,.14);border:1px solid rgba(155,127,232,.35);color:#9b7fe8;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;}
+.qbr-box{background:#0b0914;border:1px solid rgba(155,127,232,.2);border-radius:10px;overflow:hidden;}
+.qbr-bar{background:#100d1c;padding:10px 16px;border-bottom:1px solid rgba(155,127,232,.15);color:#9b7fe8;font-size:11px;font-family:'JetBrains Mono',monospace;}
+.qbr-body{padding:18px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;white-space:pre-wrap;color:rgba(232,236,245,.72);}
+
+
+/* ── DASHBOARD PREVIEW ── */
+.dash-section{background:#0a0c12;padding:64px 24px;text-align:center;}
+.dash-section .sh{margin-bottom:8px;}
+.dash-frame{max-width:1100px;margin:32px auto 0;border:1px solid #1d2035;border-radius:14px;overflow:hidden;box-shadow:0 0 60px rgba(200,164,80,.04);position:relative;}
+.dash-frame img{width:100%;height:auto;display:block;}
+.dash-frame::after{content:"";position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(10,12,18,.95));pointer-events:none;}
+.dash-caption{font-size:13px;color:rgba(232,236,245,.5);margin-top:16px;line-height:1.6;}
+.dash-caption strong{color:#e4be72;}
+.dash-tag{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:9px;color:#c8a450;background:rgba(200,164,80,.08);border:1px solid rgba(200,164,80,.15);border-radius:4px;padding:3px 10px;letter-spacing:.08em;margin-bottom:14px;}
+
+
+/* ── FOOTER ── */
+.footer{background:#06070c;border-top:1px solid #1d2035;padding:32px 24px;}
+.footer-inner{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px;}
+.footer-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:#e8ecf5;}
+.footer-brand-hex{color:#c8a450;}
+.footer-meta{font-size:12px;color:rgba(255,255,255,.5);margin-top:6px;line-height:1.6;}
+.footer-links{display:flex;gap:18px;flex-wrap:wrap;align-items:center;}
+.footer-links a{color:rgba(255,255,255,.55);font-size:13px;text-decoration:none;}
+.footer-links a:hover{color:rgba(255,255,255,.5);}
+
+/* ═══════════════════════════════════════
+   MOBILE RESPONSIVE — everything below
+   ═══════════════════════════════════════ */
+
+/* Tablet — 768px and below */
+@media(max-width:768px){
+  /* Nav — hide text links, keep logo + CTA */
+  .nav{padding:12px 16px;}
+  .nav-links a:not(.nav-cta){display:none;}
+  .nav-cta{padding:6px 12px;font-size:12px;}
+
+  /* Hero */
+  .hero{min-height:auto;}
+  .hero-img{object-position:70% 20%;}
+  .hero-overlay{background:linear-gradient(180deg,rgba(6,7,12,.95) 0%,rgba(6,7,12,.92) 60%,rgba(6,7,12,.7) 100%);}
+  .hero-content{padding:48px 20px 44px;}
+  .install-row{max-width:100%;}
+
+  /* Stats — 2 per row on tablet */
+  .stat-item{flex:1 1 calc(50% - 1px);border-bottom:1px solid #1d2035;}
+  .stat-item:nth-child(2n){border-right:none;}
+  .stat-item:nth-last-child(-n+2){border-bottom:none;}
+
+  /* Problem — stack to 1 column */
+  .problem-grid{grid-template-columns:1fr;}
+  .problem-num{font-size:48px;}
+
+  /* Demo — stack terminal above explanation */
+  .demo-split{grid-template-columns:1fr;}
+  .demo-explain{margin-top:4px;}
+
+  /* How — 2x2 grid */
+  .how-steps{grid-template-columns:1fr 1fr;}
+
+  /* Pricing — stack to 1 column */
+  .price-cards{grid-template-columns:1fr;}
+
+  /* MIKE — stack */
+  .mike-grid{grid-template-columns:1fr;}
+  .qbr-box{margin-top:8px;}
+
+  /* Section padding */
+  .section{padding:48px 20px;}
+  .problem-quote{padding:20px 20px;}
+}
+
+/* Mobile — 480px and below */
+@media(max-width:480px){
+  /* Stats — 1 per row */
+  .stat-item{flex:1 1 100%;border-right:none;border-bottom:1px solid #1d2035;padding:16px;}
+  .stat-item:last-child{border-bottom:none;}
+
+  /* How — single column */
+  .how-steps{grid-template-columns:1fr;}
+
+  /* Terminal font smaller */
+  .term-body{font-size:11px;padding:14px 14px;min-height:220px;}
+  .term-output{font-size:11px;}
+
+  /* QBR body smaller */
+  .qbr-body{font-size:11px;padding:14px;}
+
+  /* Code body smaller */
+  .how-code-body{font-size:11px;padding:16px;}
+
+  /* Demo tabs wrap nicely */
+  .demo-tab{padding:7px 14px;font-size:12px;}
+
+  /* Buttons full width on small screens */
+  .hero-btns{flex-direction:column;}
+  .btn-primary,.btn-outline{text-align:center;}
+
+  /* Section padding tighter */
+  .section{padding:40px 16px;}
+  .nav{padding:12px 14px;}
+}
+</style>
+</head>
+<body>
+<div style="background:#06070c;min-height:100vh;">
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="nav-logo"><span class="nav-logo-hex">⬡</span>Grid<span style="color:#c8a450;">Memory</span></a>
+  <div class="nav-links">
+    <a href="#demos">Demos</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#mike">MIKE</a>
+    <a href="https://github.com/openclaw/grid-memory">GitHub</a>
+    <a href="mailto:nick@criticalpathfoundry.com" class="nav-cta">Book a demo</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <img class="hero-img" src="/hero.jpg" alt="Multi-agent AI network visualization">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><div class="hero-pulse"></div><span>v1.2.0 — Open Beta</span></div>
+    <h1 class="hero-h1">Grid Memory catches<br>the things your<br><em>AI agents forget.</em></h1>
+    <p class="hero-sub">Shared persistent memory for multi-agent teams. Amnesia detection, conflict detection, decision graphs — one line of code.</p>
+    <div class="hero-installs">
+      <div class="install-row"><span class="dollar">$</span><code>npm install grid-memory</code><button class="copy-btn" onclick="cp(this,'npm install grid-memory')">copy</button></div>
+      <div class="install-row"><span class="dollar">$</span><code>pip install grid-memory</code><button class="copy-btn" onclick="cp(this,'pip install grid-memory')">copy</button></div>
+    </div>
+    <div class="hero-btns">
+      <a href="#demos" class="btn-primary">See it in action</a>
+      <a href="#pricing" class="btn-outline">View pricing</a>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAND -->
+<div class="stats-band">
+  <div class="stat-item"><span class="stat-num">36.9%</span><span class="stat-lbl">of agent failures from memory gaps</span></div>
+  <div class="stat-item"><span class="stat-num">6x</span><span class="stat-lbl">task uplift with dreaming</span></div>
+  <div class="stat-item"><span class="stat-num">A+</span><span class="stat-lbl">independent code review</span></div>
+  <div class="stat-item"><span class="stat-num">0</span><span class="stat-lbl">P0 bugs across 87 versions</span></div>
+  <div class="stat-item"><span class="stat-num">158</span><span class="stat-lbl">ops/sec throughput</span></div>
+</div>
+
+<!-- PROBLEM -->
+<div class="section">
+  <div class="eyebrow">The Problem</div>
+  <h2 class="sh sh-xl">Agents forget.<br><em>Teams fail.</em></h2>
+  <div class="problem-grid">
+    <div class="problem-card p-red">
+      <div class="problem-num">01</div>
+      <div class="problem-label">Agent Amnesia</div>
+      <div class="problem-title">Decisions vanish between sessions</div>
+      <p class="problem-body">The same problem gets discovered and re-solved by different agents on different days. No shared context, no continuity, no institutional memory.</p>
+    </div>
+    <div class="problem-card p-amber">
+      <div class="problem-num">02</div>
+      <div class="problem-label">False Consensus</div>
+      <div class="problem-title">87% corruption in 4 hours</div>
+      <p class="problem-body">One agent writes a wrong fact. Three agents read it and act on it. Research shows 87% of downstream decisions are corrupted within 4 hours of one bad write.</p>
+    </div>
+    <div class="problem-card p-gold">
+      <div class="problem-num">03</div>
+      <div class="problem-label">Zero Explainability</div>
+      <div class="problem-title">Nobody knows what caused it</div>
+      <p class="problem-body">When production breaks, which agent wrote the triggering fact? When? What did it contradict? Current tooling cannot answer this. Debugging takes days.</p>
+    </div>
+  </div>
+  <div class="problem-quote">
+    <p><strong>This is not a model problem. It is not a prompt problem.</strong> It is a memory architecture problem — and it has no production solution today.</p>
+  </div>
+</div>
+
+<!-- DEMOS -->
+<div class="section section-alt" id="demos">
+  <div class="eyebrow">Live Demos</div>
+  <h2 class="sh sh-lg">Three features. <em>All free forever.</em></h2>
+  <p class="lead">The features that make engineers stop and stare. Community tier, always.</p>
+  <div class="demo-wrap">
+    <div class="demo-tabs">
+      <button class="demo-tab active-red" id="t0" onclick="sw(0)">Amnesia Detection</button>
+      <button class="demo-tab" id="t1" onclick="sw(1)">Conflict Detection</button>
+      <button class="demo-tab" id="t2" onclick="sw(2)">Decision Graph</button>
+    </div>
+    <div class="demo-split">
+      <div>
+        <div class="terminal">
+          <div class="term-bar">
+            <div class="term-dot" style="background:#d45;"></div>
+            <div class="term-dot" style="background:#da4;"></div>
+            <div class="term-dot" style="background:#4c4;"></div>
+            <span class="term-title">grid-memory — bash</span>
+          </div>
+          <div class="term-body">
+            <div class="term-prompt"><span class="term-dollar">$</span><span class="term-typed" id="ttyp"></span><span class="term-cursor" id="tcur"></span></div>
+            <div id="tout" class="term-output" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="demo-actions">
+          <button class="copy-btn" id="ccmd" onclick="cpCmd()">copy command</button>
+          <a href="#" style="color:rgba(232,236,245,.72);font-size:12px;text-decoration:none;">full docs →</a>
+        </div>
+      </div>
+      <div id="texpl"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT DEMO VIDEO -->
+<div class="section section-dark">
+  <div class="eyebrow">Product Demo</div>
+  <h2 class="sh sh-lg">See it in action. <em>38 seconds.</em></h2>
+  <p class="lead">Command Center, executive dashboards, decision graph — all running live.</p>
+  <div style="max-width:960px;margin:40px auto 0;border-radius:12px;overflow:hidden;border:1px solid #1d2035;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <video controls playsinline poster="assets/demo-poster.jpg" style="width:100%;display:block;" preload="none">
+      <source src="assets/grid-memory-demo.mp4" type="video/mp4">
+    </video>
+  </div>
+  <p style="text-align:center;margin-top:16px;font-size:13px;color:rgba(232,236,245,.55);">Grid Memory Command Center · Decision Graph · Executive Dashboard · Amnesia Detection · QBR Reports</p>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section section-dark">
+  <div class="eyebrow">How It Works</div>
+  <h2 class="sh sh-lg">One line of code. <em>Everything changes.</em></h2>
+  <div class="how-steps">
+    <div class="how-step"><div class="how-n">01 / CHANGE ONE LINE</div><h3>Point at Grid Memory</h3><p>Replace your OpenAI base_url. Full streaming, full compatibility. Zero agent code changes required.</p></div>
+    <div class="how-step"><div class="how-n">02 / AGENTS WRITE</div><h3>Decisions get logged</h3><p>Every agent writes what it decides, discovers, or observes. 9 typed entry types with TTL.</p></div>
+    <div class="how-step"><div class="how-n">03 / GRID WATCHES</div><h3>Problems get caught</h3><p>Conflict detection, amnesia detection, staleness scoring — running on every single write.</p></div>
+    <div class="how-step"><div class="how-n">04 / YOU ASK</div><h3>Answers appear</h3><p>What was forgotten? What caused the incident? What did we accomplish this quarter?</p></div>
+  </div>
+  <div class="how-code">
+    <div class="how-code-bar">agent.py — one line changed</div>
+    <div class="how-code-body"><span style="color:rgba(255,255,255,.55);"># Before</span>
+<span style="color:rgba(255,255,255,.5);">client = OpenAI(api_key=</span><span style="color:#e4be72;">"sk-..."</span><span style="color:rgba(255,255,255,.5);">)</span>
+
+<span style="color:#3ec98a;"># After — every agent now shares memory</span>
+<span style="color:#e8ecf5;">client = OpenAI(
+  base_url=</span><span style="color:#e4be72;">"http://localhost:3000/v1"</span><span style="color:#e8ecf5;">,
+  api_key=</span><span style="color:#e4be72;">"any-value"</span><span style="color:#e8ecf5;">
+)</span></div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="section" id="pricing">
+  <div class="eyebrow">Pricing</div>
+  <h2 class="sh sh-lg">Start free. <em>Scale when it matters.</em></h2>
+  <p class="lead">Amnesia detection, conflict detection, and decision graphs are free forever under BUSL-1.1.</p>
+  <div class="price-cards">
+    <div class="price-card">
+      <div class="price-card-top">
+        <div class="price-tier" style="color:#3ec98a;">Community</div>
+        <div class="price-amount">Free <span>forever</span></div>
+        <p class="price-desc">Everything you need to evaluate Grid Memory in production.</p>
+      </div>
+      <div class="price-divider"></div>
+      <div class="price-features">
+        <div class="price-feat"><span class="price-check" style="color:#3ec98a;">✓</span><span class="price-feat-text">Memory Engine + SDK (Node + Python)</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#3ec98a;">✓</span><span class="price-feat-text">Conflict Detection</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#3ec98a;">✓</span><span class="price-feat-text">Amnesia Detection</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#3ec98a;">✓</span><span class="price-feat-text">Decision Graph</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#3ec98a;">✓</span><span class="price-feat-text">Grid Dreaming + Cascade Firewall</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#3ec98a;">✓</span><span class="price-feat-text">Governance + Federation</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#3ec98a;">✓</span><span class="price-feat-text">OpenAI-compatible proxy</span></div>
+      </div>
+      <div class="price-card-bottom"><a href="#" class="price-btn price-btn-green">npm install grid-memory →</a></div>
+    </div>
+    <div class="price-card">
+      <div class="price-card-top">
+        <div class="price-tier" style="color:#e4be72;">Enterprise</div>
+        <div class="price-amount">$24K <span>/ year</span></div>
+        <p class="price-desc">Production governance and compliance for engineering teams at regulated companies.</p>
+      </div>
+      <div class="price-divider"></div>
+      <div class="price-features">
+        <div class="price-feat"><span class="price-check" style="color:#e4be72;">✓</span><span class="price-feat-text">Everything in Community</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#e4be72;">✓</span><span class="price-feat-text">PostgreSQL backend</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#e4be72;">✓</span><span class="price-feat-text">SSO / SAML authentication</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#e4be72;">✓</span><span class="price-feat-text">Advanced audit retention</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#e4be72;">✓</span><span class="price-feat-text">Workspace isolation at auth layer</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#e4be72;">✓</span><span class="price-feat-text">PII enforcement modes</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#e4be72;">✓</span><span class="price-feat-text">SLA + dedicated support</span></div>
+      </div>
+      <div class="price-card-bottom"><a href="mailto:nick@criticalpathfoundry.com" class="price-btn price-btn-gold">Book a call →</a></div>
+    </div>
+    <div class="price-card featured">
+      <div class="price-card-top">
+        <div class="price-tier" style="color:#9b7fe8;">MIKE Intelligence</div>
+        <div class="price-amount">$36K <span>/ year</span></div>
+        <p class="price-desc">Executive-grade intelligence for consulting firms and PE-backed companies.</p>
+      </div>
+      <div class="price-divider"></div>
+      <div class="price-features">
+        <div class="price-feat"><span class="price-check" style="color:#9b7fe8;">✓</span><span class="price-feat-text">Everything in Enterprise</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#9b7fe8;">✓</span><span class="price-feat-text">QBR Generator</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#9b7fe8;">✓</span><span class="price-feat-text">Executive Dashboard</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#9b7fe8;">✓</span><span class="price-feat-text">Opportunity Pipeline + Forecasting</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#9b7fe8;">✓</span><span class="price-feat-text">Portfolio Analytics</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#9b7fe8;">✓</span><span class="price-feat-text">Board Reporting</span></div>
+        <div class="price-feat"><span class="price-check" style="color:#9b7fe8;">✓</span><span class="price-feat-text">PE Operating Dashboards</span></div>
+      </div>
+      <div class="price-card-bottom"><a href="mailto:nick@criticalpathfoundry.com" class="price-btn price-btn-purple">Book a MIKE demo →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- MIKE -->
+<div class="section mike-section" id="mike">
+  <div class="mike-grid">
+    <div>
+      <div class="eyebrow" style="color:#9b7fe8;"><span style="background:#9b7fe8;display:block;width:22px;height:1px;"></span>MIKE Intelligence</div>
+      <h2 class="sh sh-lg" style="margin-bottom:8px;">The QBR that used to<br>take <em style="color:#9b7fe8;">20 hours.</em></h2>
+      <p class="lead" style="margin-bottom:0;">Turn every agent decision into executive-grade intelligence. Generated in seconds.</p>
+      <div class="mike-feats">
+        <div class="mike-feat"><div class="mike-feat-icon">›</div><div class="mike-feat-text"><h4>QBR Generation</h4><p>Full quarterly business review from agent memory in seconds</p></div></div>
+        <div class="mike-feat"><div class="mike-feat-icon">›</div><div class="mike-feat-text"><h4>Opportunity Pipeline</h4><p>Stage-weighted forecasting and revenue expansion scoring</p></div></div>
+        <div class="mike-feat"><div class="mike-feat-icon">›</div><div class="mike-feat-text"><h4>Portfolio Analytics</h4><p>Cross-client rollups and PE operating dashboards</p></div></div>
+        <div class="mike-feat"><div class="mike-feat-icon">›</div><div class="mike-feat-text"><h4>Board Reporting</h4><p>Executive dashboards your board can actually read</p></div></div>
+      </div>
+      <a href="mailto:nick@criticalpathfoundry.com" class="mike-cta">Book a MIKE demo — from $36K/yr →</a>
+    </div>
+    <div class="qbr-box">
+      <div class="qbr-bar">POST /qbr/generate</div>
+      <div class="qbr-body">{
+  <span style="color:#9b7fe8;">"period"</span>: "Q2 2026",
+  <span style="color:#9b7fe8;">"kpis"</span>: {
+    "decisions_logged":      <span style="color:#e4be72;">247</span>,
+    "success_rate":          <span style="color:#e4be72;">0.81</span>,
+    "contradictions_caught": <span style="color:#e4be72;">12</span>,
+    "hours_saved":           <span style="color:#e4be72;">340</span>
+  },
+  <span style="color:#3ec98a;">"wins"</span>: [
+    "PostgreSQL migration on time",
+    "Auth refactor — zero incidents"
+  ],
+  <span style="color:#c98a20;">"risks"</span>: [
+    "3 decisions without rationale",
+    "Deploy dependency forgotten"
+  ],
+  <span style="color:#9b7fe8;">"pipeline_value"</span>: <span style="color:#e4be72;">"$2.4M"</span>
+}</div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD PREVIEW -->
+<div class="dash-section">
+  <div class="dash-tag">⚡ COMMAND CENTER</div>
+  <h2 class="sh sh-lg">See what your agents <em>actually know.</em></h2>
+  <p class="lead" style="margin:0 auto 0;">Not just raw logs. A live intelligence dashboard that translates agent memory into business impact — contradictions, amnesia risk, decision quality, and the chain of "if that is true, what else is true too?"</p>
+  <div class="dash-frame">
+    <a href="/command-center"><img src="/dashboard-hero.png" alt="Grid Memory Command Center dashboard"></a>
+  </div>
+  <div class="dash-caption">
+    <strong>4 contradictions</strong> detected · <strong>0.25 amnesia score</strong> with 3 SPOFs · <strong>$12.8K</strong> rework liability identified · <strong>20%</strong> outcome coverage<br>
+    Every metric chained through <em>"if that is true, what else is true?"</em> — with dollar values, risk exposure, and prioritized recommendations
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand"><span class="footer-brand-hex">⬡</span>Grid<span style="color:#c8a450;">Memory</span></div>
+      <div class="footer-meta" style="color:rgba(255,255,255,.55);">by Critical Path Foundry<br>nick@criticalpathfoundry.com<br>BUSL-1.1 · Converts to Apache 2.0 on 2030-05-30</div>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/openclaw/grid-memory">GitHub</a>
+      <a href="#">npm</a>
+      <a href="#">PyPI</a>
+      <a href="#pricing">Enterprise</a>
+      <a href="#mike">MIKE</a>
+      <a href="mailto:nick@criticalpathfoundry.com">Contact</a>
+    </div>
+  </div>
+</div>
+
+<script>
+
+var DEMOS = [
+  {
+    cmd: "curl localhost:3000/amnesia/detect",
+    ac: "active-red", col: "#c94040",
+    out: '{\n  "forgotten_decisions": [\n    {\n      "entry": "Use PostgreSQL for storage",\n      "written_by": "arch-agent",\n      "age_days": 21,\n      "contradiction": "MongoDB migration scheduled",\n      "risk": "high"\n    }\n  ],\n  "amnesia_score": 0.74,\n  "summary": "1 critical forgotten decision found"\n}',
+    title: "Your AI team forgot a critical decision.",
+    body: "Grid Memory scans active decisions against recent writes. When a new agent is about to contradict a 3-week-old decision, it flags it before anything breaks.",
+    note: "One API call. No configuration. Works with AutoGen, CrewAI, LangGraph.",
+    link: "amnesia score, age decay, contradiction detection \u2192"
+  },
+  {
+    cmd: "curl -X POST localhost:3000/write",
+    ac: "active-amber", col: "#c98a20",
+    out: '{\n  "entry_id": "grid_20260530_c4f8",\n  "status": "written",\n  "conflict_check": {\n    "detected": true,\n    "contradicts": "Never deploy on Fridays",\n    "written_by": "arch-agent",\n    "age_days": 21,\n    "action": "CONFLICT FLAGGED"\n  }\n}',
+    title: "Two agents silently disagreed.",
+    body: "When any agent writes a decision, Grid Memory checks it against recent entries in the same tag scope. Contradictions flagged immediately with the original author and age.",
+    note: "The conflict cascades through all downstream decisions that relied on the wrong fact.",
+    link: "cascade firewall, recall command, audit trail \u2192"
+  },
+  {
+    cmd: "curl localhost:3000/decisions/graph",
+    ac: "active-gold", col: "#c8a450",
+    out: '{\n  "nodes": 47, "edges": 89,\n  "causal_chains": [\n    {\n      "root": "Use PostgreSQL",\n      "depth": 4,\n      "descendants": [\n        "Schema design",\n        "Migration plan",\n        "\u2192 Incident #4471"\n      ]\n    }\n  ],\n  "insight": "1 root decision caused the incident"\n}',
+    title: "Show me every decision that led to this.",
+    body: "The decision graph is a full DAG of every decision, fact, and observation with causal links. Trace any production incident back to the root in seconds.",
+    note: "Export as JSON. Share with your post-mortem. EU AI Act compliant.",
+    link: "causal chains, explainability transcript, export \u2192"
+  }
+];
+
+var cur = 0, tmr = null;
+
+function sw(i) {
+  cur = i;
+  [0,1,2].forEach(function(j) {
+    document.getElementById('t'+j).className = 'demo-tab';
+  });
+  document.getElementById('t'+i).className = 'demo-tab ' + DEMOS[i].ac;
+  startTyping(i);
+  renderExplain(i);
+}
+
+function startTyping(i) {
+  clearTimeout(tmr);
+  var d = DEMOS[i];
+  var tEl = document.getElementById('ttyp');
+  var cEl = document.getElementById('tcur');
+  var oEl = document.getElementById('tout');
+  tEl.textContent = '';
+  oEl.style.display = 'none';
+  oEl.innerHTML = '';
+  cEl.style.display = 'inline-block';
+  var n = 0;
+  var full = d.cmd;
+  function tick() {
+    n++;
+    tEl.textContent = full.slice(0, n);
+    if (n < full.length) {
+      tmr = setTimeout(tick, 14);
+    } else {
+      cEl.style.display = 'none';
+      tmr = setTimeout(function() { showOutput(i); }, 200);
+    }
+  }
+  tmr = setTimeout(tick, 300);
+}
+
+function showOutput(i) {
+  var d = DEMOS[i];
+  var oEl = document.getElementById('tout');
+  oEl.style.display = 'block';
+  oEl.innerHTML = '';
+  var lines = d.out.split('\n');
+  for (var k = 0; k < lines.length; k++) {
+    var s = document.createElement('span');
+    var hi = /CONFLICT|forgotten|risk.*high|amnesia_score|Incident|contradiction/.test(lines[k]);
+    s.style.color = hi ? d.col : 'rgba(232,236,245,.42)';
+    s.textContent = lines[k] + '\n';
+    oEl.appendChild(s);
+  }
+}
+
+function renderExplain(i) {
+  var d = DEMOS[i];
+  document.getElementById('texpl').innerHTML =
+    '<div class="demo-explain">' +
+    '<div class="demo-title" style="color:' + d.col + ';">' + d.title + '</div>' +
+    '<div class="demo-body">' + d.body + '</div>' +
+    '<div class="demo-note" style="border-color:' + d.col + ';"><p>' + d.note + '</p></div>' +
+    '<a href="#" class="demo-link" style="color:' + d.col + ';">See docs: ' + d.link + '</a>' +
+    '</div>';
+}
+
+function cp(btn, txt) {
+  navigator.clipboard.writeText(txt).then(function() {
+    btn.textContent = '\u2713 copied';
+    btn.classList.add('ok');
+    setTimeout(function() { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 1800);
+  });
+}
+
+function cpCmd() {
+  var cmds = [
+    "curl localhost:3000/amnesia/detect",
+    "curl -X POST localhost:3000/write",
+    "curl localhost:3000/decisions/graph"
+  ];
+  var btn = document.getElementById('ccmd');
+  navigator.clipboard.writeText(cmds[cur]).then(function() {
+    btn.textContent = '\u2713 copied';
+    btn.classList.add('ok');
+    setTimeout(function() { btn.textContent = 'copy command'; btn.classList.remove('ok'); }, 1800);
+  });
+}
+
+setTimeout(function() { sw(0); }, 100);
+
+</script>
+</body>
+</html>
