@@ -13,6 +13,9 @@
 
 FROM node:20-alpine
 
+# Create non-root user for security
+RUN addgroup -S grid && adduser -S grid -G grid
+
 WORKDIR /app
 
 # Copy all community modules
@@ -34,5 +37,8 @@ ENV HOST=0.0.0.0
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD wget -qO- http://localhost:8080/health || exit 1
+
+# Run as non-root user
+USER grid
 
 CMD ["node", "server.js"]

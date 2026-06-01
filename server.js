@@ -47,6 +47,16 @@ const cascade = require('./cascade.js');
 const provenance = require('./provenance.js');
 const dreaming = require('./dreaming.js');
 const { Gateway, scanPII, logAudit, getKeys, getAuditLog, endpointLimiter } = require('./gateway.js');
+// ─── Global error handlers ───────────────────────────────────────────────────
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION:', reason);
+  // Don't crash — log and continue
+});
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  // Don't crash — log and continue
+});
+
 const subscriptions = require('./subscriptions.js');
 const contracts = require('./contracts.js');
 const reputation = require('./reputation.js');
@@ -140,15 +150,16 @@ function parseQuery(url) {
 // ─── Response helpers ──────────────────────────────────────────────────────────
 
 function json(res, data, status = 200, corsHeaders) {
+  const allowedOrigin = process.env.GRID_CORS_ORIGIN || '';
+  const origin = corsHeaders ? (corsHeaders['Access-Control-Allow-Origin'] || allowedOrigin) : allowedOrigin;
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': corsHeaders ? (corsHeaders['Access-Control-Allow-Origin'] || '*') : '*',
+    'Access-Control-Allow-Origin': origin || (process.env.GRID_ENFORCE_AUTH === 'true' ? '' : '*'),
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Grid-Workspace',
   };
-  if (corsHeaders && corsHeaders['Access-Control-Allow-Origin'] !== '*') {
-    headers['Access-Control-Allow-Origin'] = corsHeaders['Access-Control-Allow-Origin'];
-  }
+  // Don't send empty origin header
+  if (!headers['Access-Control-Allow-Origin']) delete headers['Access-Control-Allow-Origin'];
   res.writeHead(status, headers);
   res.end(JSON.stringify(data, null, 2));
 }
@@ -160,7 +171,7 @@ function error(res, message, status = 400, code = 'INVALID_PARAMETER') {
 // ─── Gateway Setup ──────────────────────────────────────────────────────────────
 
 const gateway = new Gateway();
-gateway.config.ENFORCE_AUTH = process.env.GRID_ENFORCE_AUTH === 'true';
+gateway.config.ENFORCE_AUTH = process.env.GRID_ENFORCE_AUTH !== 'false';
 
 // ─── MIKE Intelligence — optional enterprise tier ────────────────
 let mikeDashboard = null;
@@ -192,9 +203,9 @@ function mikeRequired(handler) {
   };
 }
 
-if (process.env.GRID_ENFORCE_AUTH !== 'true') {
-  console.warn('⚠️  GRID_ENFORCE_AUTH is not set. The server is running in DEVELOPMENT MODE with NO authentication.');
-  console.warn('   Set GRID_ENFORCE_AUTH=true and create an admin API key for production use.');
+if (process.env.GRID_ENFORCE_AUTH === 'false') {
+  console.warn('⚠️  GRID_ENFORCE_AUTH is set to false. The server is running in DEVELOPMENT MODE with NO authentication.');
+  console.warn('   Set GRID_ENFORCE_AUTH=true or unset it (defaults to true) for production use.');
   console.warn('   Create a key: curl -X POST http://localhost:' + PORT + '/gateway/key/create -H "Content-Type: application/json" -d \'{"label":"admin","permission":"admin"}\'');
 }
 
@@ -335,7 +346,8 @@ function registerIntelligenceRoutes() {
       return json(res, await setupWizard.applyConfig(body, grid));
     }
     return json(res, await setupWizard.wizard(grid));
-  });
+  }), { rateLimit: 5 });
+
 
   // Governance and intelligence endpoints
   registry.register('GET', '/staleness', 'analyst', async (req, res, grid) => {
@@ -386,7 +398,8 @@ function registerIntelligenceRoutes() {
       return json(res, { generated, registered: constitution.registerConstitution('default', generated.rules, generated.enforceMode) });
     }
     return json(res, { generated, message: 'No rules could be generated from the provided text.' });
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('GET', '/auto-contracts/state', 'analyst', async (req, res, grid) => {
     logAudit('auto_contract_state', 'allowed', 'GET', '/auto-contracts/state', '', '', '', '');
@@ -397,13 +410,15 @@ function registerIntelligenceRoutes() {
     logAudit('auto_contract_approve', 'allowed', 'POST', '/auto-contracts/approve', '', '', '', '');
     const body = await parseBody(req);
     return json(res, autoContract.approveContract(body));
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('POST', '/auto-contracts/reject', 'admin', async (req, res, grid) => {
     logAudit('auto_contract_reject', 'allowed', 'POST', '/auto-contracts/reject', '', '', '', '');
     const body = await parseBody(req);
     return json(res, autoContract.rejectContract(body.scope));
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('GET', '/auto-contracts', 'analyst', async (req, res, grid) => {
     logAudit('auto_contracts', 'allowed', 'GET', '/auto-contracts', '', '', '', '');
@@ -415,7 +430,8 @@ function registerIntelligenceRoutes() {
   registry.register('POST', '/prune', 'admin', async (req, res, grid) => {
     logAudit('prune', 'allowed', 'POST', '/prune', '', '', '', '');
     return json(res, await grid.prune());
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('DELETE', '/forget/:id', 'admin', async (req, res, grid, gateway, query, params) => {
     logAudit('forget', 'allowed', 'DELETE', '/forget/' + params.id, '', '', '', '');
@@ -433,7 +449,8 @@ function registerIntelligenceRoutes() {
     const result = await grid.forget(params.id);
     if (!result.found) return error(res, result.message, 404, 'NOT_FOUND');
     return json(res, result);
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('GET', '/export', 'architect', async (req, res, grid) => {
     if (!endpointLimiter(req)) return json(res, { error: 'Rate limit exceeded for /export. Max 10/min.', code: 'RATE_LIMITED' }, 429);
@@ -462,18 +479,21 @@ function registerIntelligenceRoutes() {
       } catch (e) { skipped++; }
     }
     return json(res, { imported, skipped, workspace: ws || 'global' });
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('POST', '/seed', 'admin', async (req, res, grid) => {
     logAudit('seed', 'allowed', 'POST', '/seed', '', '', '', '');
     return json(res, await seedMode.seedGrid(grid));
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('POST', '/federation/quick-connect', 'admin', async (req, res, grid) => {
     const body = await parseBody(req);
     logAudit('federation_quick_connect', 'allowed', 'POST', '/federation/quick-connect', '', '', '', body.peerUrl || '');
     return json(res, await require('./federation.js').quickConnect(body.peerUrl, body.options || {}));
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('POST', '/contracts', 'architect', async (req, res, grid) => {
     logAudit('contracts_register', 'allowed', 'POST', '/contracts', '', '', '', '');
@@ -497,7 +517,8 @@ function registerIntelligenceRoutes() {
     const body = await parseBody(req);
     logAudit('federation_peer_add', 'allowed', 'POST', '/federation/peers', '', '', '', body.url || '');
     return json(res, require('./federation.js').registerPeer(body.url, body.trustLevel || 'unverified', body.sharedSecret || null));
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('GET', '/federation/peers', 'analyst', async (req, res, grid) => {
     logAudit('federation_peers_list', 'allowed', 'GET', '/federation/peers', '', '', '', '');
@@ -509,14 +530,16 @@ function registerIntelligenceRoutes() {
     const peerUrl = decodeURIComponent(fullPath.slice('/federation/peers/'.length));
     logAudit('federation_peer_remove', 'allowed', 'DELETE', '/federation/peers/' + peerUrl, '', '', '', '');
     return json(res, require('./federation.js').removePeer(peerUrl));
-  });
+  }), { rateLimit: 5 });
+
 
   registry.register('POST', '/federation/sync/*', 'admin', async (req, res, grid) => {
     const fullPath = req.url.split('?')[0];
     const peerUrl = decodeURIComponent(fullPath.slice('/federation/sync/'.length));
     logAudit('federation_sync', 'allowed', 'POST', '/federation/sync/' + peerUrl, '', '', '', '');
     return json(res, await require('./federation.js').syncFromPeer(grid, peerUrl));
-  });
+  }), { rateLimit: 5 });
+
 
 
 registerIntelligenceRoutes();

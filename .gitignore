@@ -27,3 +27,17 @@ _meta.json
 !docs/assets/demo-poster.jpg
 !docs/assets/grid-memory-logo.jpg
 !docs/assets/logo-icon.jpg
+
+# Corrupt / state data (committed by accident)
+data/store.json
+*.corrupt.*
+
+# Python build artifacts
+dist/
+
+# Internal strategy docs (pricing, route maps)
+EDITION_MATRIX.md
+ROUTE_INVENTORY.md
+
+# Enterprise tier source (private — commercial)
+sdk/python/grid_memory/enterprise/

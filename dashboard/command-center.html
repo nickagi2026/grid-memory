@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Memory — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes glow{0%,100%{box-shadow:0 0 4px rgba(200,164,80,.1)}50%{box-shadow:0 0 12px rgba(200,164,80,.2)}}
+@keyframes scan{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+@keyframes nodePulse{0%,100%{opacity:.6;r:3}50%{opacity:1;r:4}}
+@keyframes lineDrawn{from{stroke-dashoffset:400}to{stroke-dashoffset:0}}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:#07090e;color:#d0d8e8;font-size:13px;overflow-x:hidden;}
+.grid{display:grid;grid-gap:12px;padding:14px;max-width:1440px;margin:auto;}
+
+/* HEADER BAR */
+.header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(11,14,19,.95);border:1px solid #1a1e2e;border-radius:8px;}
+.header-left{display:flex;align-items:center;gap:14px;}
+.header-left .logo{font-weight:700;font-size:15px;color:#e8ecf5;}
+.header-left .logo span{color:#f0c860;}
+.header-left .badge{font-family:'JetBrains Mono',monospace;font-size:9px;background:rgba(240,200,96,.08);border:1px solid rgba(240,200,96,.2);color:#f0c860;padding:3px 8px;border-radius:4px;letter-spacing:.06em;}
+.header-right{display:flex;align-items:center;gap:16px;}
+.status{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(208,216,232,.4);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#3ec98a;animation:pulse 2s ease infinite;}
+.header-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(208,216,232,.2);}
+.header-alert{width:24px;height:24px;border-radius:50%;background:rgba(201,64,64,.1);border:1px solid rgba(201,64,64,.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:#c94040;cursor:pointer;}
+
+/* PANEL */
+.panel{background:rgba(11,14,19,.85);border:1px solid #1a1e2e;border-radius:10px;padding:16px;position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(240,200,96,.15),transparent);}
+.panel-title{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.15em;color:rgba(208,216,232,.35);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.panel-title .accent{width:12px;height:2px;background:#f0c860;border-radius:1px;}
+
+/* TOP ROW: STAT CARDS */
+.stat-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-panel{background:rgba(11,14,19,.85);border:1px solid #1a1e2e;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:4px;}
+.stat-panel .svalue{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1;}
+.stat-panel .svalue.gold{color:#f0c860;}
+.stat-panel .svalue.red{color:#d44;}
+.stat-panel .svalue.cyan{color:#5bc0eb;}
+.stat-panel .svalue.green{color:#3ec98a;}
+.stat-panel .svalue.amber{color:#e8a838;}
+.stat-panel .slabel{font-size:10px;color:rgba(208,216,232,.35);text-transform:uppercase;letter-spacing:.06em;}
+.stat-panel .srow{display:flex;justify-content:space-between;font-size:11px;color:rgba(208,216,232,.3);margin-top:2px;}
+.stat-panel .srow .up{color:#3ec98a;}
+.stat-panel .srow .down{color:#d44;}
+
+/* MID: NETWORK GRAPH + DONUT */
+.mid-row{grid-column:1/-1;display:grid;grid-template-columns:1.2fr .8fr;gap:12px;}
+
+/* NETWORK GRAPH */
+.graph-panel{padding:16px;}
+.graph-svg{width:100%;height:180px;}
+.node-circle{transition:all .3s;}
+.node-circle:hover{filter:drop-shadow(0 0 6px rgba(240,200,96,.3));cursor:pointer;}
+.node-label{font-size:8px;fill:rgba(208,216,232,.4);font-family:'JetBrains Mono',monospace;}
+.edge{stroke:rgba(240,200,96,.08);stroke-width:1;fill:none;stroke-dasharray:3,3;}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:20px;height:100%;}
+.donut-svg{width:110px;height:110px;flex-shrink:0;}
+.legend{display:flex;flex-direction:column;gap:5px;}
+.leg-item{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(208,216,232,.5);}
+.leg-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.leg-val{font-family:'JetBrains Mono',monospace;font-size:10px;margin-left:auto;color:rgba(208,216,232,.3);}
+
+/* BOTTOM ROW: 3 COLUMNS */
+.bot-row{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+
+/* CHAIN / IF-THEN */
+.chain-list{display:flex;flex-direction:column;gap:6px;}
+.chain-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(26,30,46,.4);}
+.chain-item:last-child{border-bottom:none;}
+.chain-arr{color:rgba(240,200,96,.2);font-size:14px;flex-shrink:0;margin-top:1px;}
+.chain-label{font-size:9px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:rgba(208,216,232,.2);}
+.chain-text{font-size:12px;line-height:1.5;color:rgba(208,216,232,.6);}
+.chain-text strong{color:#d0d8e8;}
+.chain-text .hl-gold{color:#f0c860;}
+.chain-text .hl-red{color:#d44;}
+.chain-text .hl-green{color:#3ec98a;}
+
+/* BAR GRAPH */
+.bars{display:flex;align-items:flex-end;justify-content:center;gap:14px;height:120px;margin-top:8px;}
+.bar-group{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:36px;border-radius:3px 3px 0 0;min-height:4px;transition:height .5s;}
+.bar-val{font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.bar-lbl{font-size:8px;color:rgba(208,216,232,.25);text-transform:uppercase;letter-spacing:.04em;}
+
+/* INSIGHT */
+.insight-box{background:rgba(240,200,96,.03);border:1px solid rgba(240,200,96,.08);border-radius:6px;padding:10px;margin-top:8px;}
+.insight-box .ilabel{font-size:8px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.12em;color:rgba(240,200,96,.4);margin-bottom:3px;}
+.insight-box .itext{font-size:11px;color:rgba(208,216,232,.5);line-height:1.5;}
+
+/* ALERT */
+.alert-bar{display:flex;gap:8px;margin-bottom:8px;padding:6px 8px;border-radius:4px;font-size:11px;align-items:center;}
+.alert-bar.alert-red{background:rgba(201,64,64,.06);border:1px solid rgba(201,64,64,.12);}
+.alert-bar.alert-amber{background:rgba(232,168,56,.06);border:1px solid rgba(232,168,56,.12);}
+.alert-bar.alert-green{background:rgba(62,201,138,.06);border:1px solid rgba(62,201,138,.12);}
+.alert-bar .aicon{flex-shrink:0;font-size:12px;}
+.alert-bar .atext{flex:1;line-height:1.4;}
+.alert-bar .atext strong{color:#d0d8e8;}
+.alert-bar .avalue{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(208,216,232,.3);}
+
+/* FOOTNOTE */
+.foot{grid-column:1/-1;text-align:center;padding:8px 0 4px;font-size:8px;color:rgba(208,216,232,.06);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+<div class="grid">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">⬡ Grid<span>Memory</span></div>
+    <span class="badge">COMMAND CENTER</span>
+    <span class="badge" style="border-color:rgba(62,201,138,.2);color:#3ec98a;background:rgba(62,201,138,.06);">LIVE</span>
+  </div>
+  <div class="header-right">
+    <div class="status"><span class="status-dot"></span>3 agents online</div>
+    <div class="status">8 entries · 5 decisions</div>
+    <div class="header-time">2026-05-31 20:50 UTC</div>
+    <div class="header-alert">4</div>
+  </div>
+</div>
+
+<!-- STAT ROW -->
+<div class="stat-row">
+  <div class="stat-panel">
+    <div class="svalue amber">4</div>
+    <div class="slabel">Active Contradictions</div>
+    <div class="srow"><span>50% of entries</span><span class="down">↑ 4 this session</span></div>
+  </div>
+  <div class="stat-panel">
+    <div class="svalue amber">0.25</div>
+    <div class="slabel">Amnesia Score</div>
+    <div class="srow"><span>3 knowledge SPOFs</span><span class="down">moderate risk</span></div>
+  </div>
+  <div class="stat-panel">
+    <div class="svalue gold">$12.8K</div>
+    <div class="slabel">Rework Liability / Q</div>
+    <div class="srow"><span>2.5% sprint capacity</span><span class="down">at risk</span></div>
+  </div>
+  <div class="stat-panel">
+    <div class="svalue cyan">20%</div>
+    <div class="slabel">Outcome Coverage</div>
+    <div class="srow"><span>1 of 5 tracked</span><span class="down">needs improvement</span></div>
+  </div>
+</div>
+
+<!-- MID ROW: NETWORK GRAPH + DONUT -->
+<div class="mid-row">
+  <div class="panel graph-panel">
+    <div class="panel-title"><span class="accent"></span> Decision Topology · agent knowledge graph</div>
+    <svg class="graph-svg" viewBox="0 0 500 180">
+      <!-- edges -->
+      <line x1="250" y1="25" x2="100" y2="80" class="edge"/>
+      <line x1="250" y1="25" x2="250" y2="80" class="edge"/>
+      <line x1="250" y1="25" x2="400" y2="80" class="edge"/>
+      <line x1="100" y1="80" x2="60" y2="135" class="edge"/>
+      <line x1="100" y1="80" x2="140" y2="135" class="edge"/>
+      <line x1="250" y1="80" x2="200" y2="135" class="edge"/>
+      <line x1="250" y1="80" x2="300" y2="135" class="edge"/>
+      <line x1="400" y1="80" x2="360" y2="135" class="edge"/>
+      <line x1="400" y1="80" x2="440" y2="135" class="edge"/>
+      <!-- conflict edge (red dashed) -->
+      <line x1="100" y1="80" x2="400" y2="80" stroke="rgba(201,64,64,.15)" stroke-width="1" stroke-dasharray="4,3" stroke-dashoffset="0" style="animation:lineDrawn 2s ease-out"/>
+      <!-- root -->
+      <circle cx="250" cy="25" r="7" fill="rgba(62,201,138,.15)" stroke="#3ec98a" stroke-width="1.5"/>
+      <text x="250" y="28" text-anchor="middle" fill="#3ec98a" font-size="7" font-family="JetBrains Mono">⬡</text>
+      <text x="250" y="12" text-anchor="middle" class="node-label">ROOT</text>
+      <!-- level 2 -->
+      <circle cx="100" cy="80" r="6" fill="rgba(240,200,96,.12)" stroke="#f0c860" stroke-width="1.2"/>
+      <text x="100" y="84" text-anchor="middle" fill="#f0c860" font-size="6" font-family="JetBrains Mono">A</text>
+      <text x="100" y="68" text-anchor="middle" class="node-label">arch</text>
+      <circle cx="250" cy="80" r="6" fill="rgba(232,168,56,.1)" stroke="#e8a838" stroke-width="1.2"/>
+      <text x="250" y="84" text-anchor="middle" fill="#e8a838" font-size="6" font-family="JetBrains Mono">B</text>
+      <text x="250" y="68" text-anchor="middle" class="node-label">arch</text>
+      <circle cx="400" cy="80" r="6" fill="rgba(201,64,64,.12)" stroke="#d44" stroke-width="1.2"/>
+      <text x="400" y="84" text-anchor="middle" fill="#d44" font-size="6" font-family="JetBrains Mono">S</text>
+      <text x="400" y="68" text-anchor="middle" class="node-label">sec</text>
+      <!-- level 3 leaves -->
+      <circle cx="60" cy="135" r="4" fill="rgba(240,200,96,.08)" stroke="rgba(240,200,96,.15)" stroke-width="1"/>
+      <circle cx="140" cy="135" r="4" fill="rgba(232,168,56,.06)" stroke="rgba(232,168,56,.1)" stroke-width="1"/>
+      <circle cx="200" cy="135" r="4" fill="rgba(240,200,96,.08)" stroke="rgba(240,200,96,.15)" stroke-width="1"/>
+      <circle cx="300" cy="135" r="4" fill="rgba(62,201,138,.08)" stroke="rgba(62,201,138,.15)" stroke-width="1"/>
+      <circle cx="360" cy="135" r="4" fill="rgba(201,64,64,.08)" stroke="rgba(201,64,64,.15)" stroke-width="1"/>
+      <circle cx="440" cy="135" r="4" fill="rgba(232,168,56,.06)" stroke="rgba(232,168,56,.1)" stroke-width="1"/>
+      <!-- labels -->
+      <text x="100" y="105" text-anchor="middle" fill="rgba(208,216,232,.15)" font-size="7" font-family="JetBrains Mono">PostgreSQL</text>
+      <text x="250" y="105" text-anchor="middle" fill="rgba(208,216,232,.15)" font-size="7" font-family="JetBrains Mono">GraphQL</text>
+      <text x="400" y="105" text-anchor="middle" fill="rgba(208,216,232,.15)" font-size="7" font-family="JetBrains Mono">OAuth 2.0</text>
+      <!-- conflict annotation -->
+      <text x="250" y="170" text-anchor="middle" fill="rgba(201,64,64,.2)" font-size="7" font-family="JetBrains Mono">⚡ 4 contradictions · red dashed edges show conflicting paths</text>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><span class="accent"></span> Decision Outcomes · tracked vs untracked</div>
+    <div class="donut-wrap">
+      <svg class="donut-svg" viewBox="0 0 110 110">
+        <circle cx="55" cy="55" r="42" fill="none" stroke="rgba(26,30,46,.6)" stroke-width="10"/>
+        <circle cx="55" cy="55" r="42" fill="none" stroke="#3ec98a" stroke-width="10" stroke-dasharray="26.4 237.6" transform="rotate(-90 55 55)" stroke-linecap="round" style="transition:stroke-dasharray .6s"/>
+        <circle cx="55" cy="55" r="42" fill="none" stroke="rgba(26,30,46,.3)" stroke-width="10" stroke-dasharray="210.6 237.6" transform="rotate(-90 55 55)"/>
+        <text x="55" y="52" text-anchor="middle" fill="#d0d8e8" font-size="24" font-weight="700" font-family="JetBrains Mono">20%</text>
+        <text x="55" y="66" text-anchor="middle" fill="rgba(208,216,232,.2)" font-size="8" font-family="JetBrains Mono">tracked</text>
+      </svg>
+      <div class="legend">
+        <div class="leg-item"><span class="leg-dot" style="background:#3ec98a;"></span> Tracked with outcome <span class="leg-val">1 (20%)</span></div>
+        <div class="leg-item"><span class="leg-dot" style="background:rgba(26,30,46,.3);"></span> Untracked <span class="leg-val">4 (80%)</span></div>
+        <div class="leg-item" style="margin-top:6px;flex-direction:column;align-items:flex-start;gap:2px;">
+          <span style="font-size:10px;color:rgba(208,216,232,.2);">Tracked success rate: <span style="color:#3ec98a;">100%</span></span>
+          <span style="font-size:9px;color:rgba(208,216,232,.1);">Sample size: 1 — not significant yet</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM ROW: 3 COLUMNS -->
+<div class="bot-row">
+
+  <!-- COL 1: IF/THEN CHAIN — CONTRADICTIONS -->
+  <div class="panel">
+    <div class="panel-title"><span class="accent"></span> Contradictions — The Chain</div>
+    <div class="alert-bar alert-red"><span class="aicon">⚔️</span><span class="atext"><strong>4 contradictions</strong> across 8 entries</span><span class="avalue">50%</span></div>
+    <div class="chain-list">
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">Trigger</div><div class="chain-text">Agents are making decisions in silos. <strong>arch-agent</strong> says PostgreSQL, <strong>ops-agent</strong> says PostgreSQL, <strong>arch-agent</strong> separately says MongoDB.</div></div></div>
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">Effect</div><div class="chain-text">Each contradiction = ~1 engineer-day to resolve. At $800/day blended cost, that's <strong class="hl-red">$3,200 per contradiction</strong>.</div></div></div>
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">Business Impact</div><div class="chain-text">4 contradictions = <strong class="hl-red">$12,800/quarter</strong> in rework. At current trajectory, <strong>1 full sprint lost per quarter</strong> to reconciliation.</div></div></div>
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">Unexpected insight</div><div class="chain-text"><strong>arch-agent is contradicting itself.</strong> It proposed both PostgreSQL and MongoDB. This isn't a multi-agent disagreement — it's a single agent changing its mind without retracting the old decision. One ADR entry would resolve 75% of current contradictions.</div></div></div>
+    </div>
+    <div class="insight-box"><div class="ilabel">🔮 What if you fix this?</div><div class="itext">Writing 1 resolved ADR + enabling outcome tracking would eliminate <strong class="hl-green">$10K/quarter</strong> in avoidable rework.</div></div>
+  </div>
+
+  <!-- COL 2: AMNESIA + BAR CHART -->
+  <div class="panel">
+    <div class="panel-title"><span class="accent"></span> Knowledge Health · Amnesia Score: 0.25</div>
+    <div class="bars">
+      <div class="bar-group"><div class="bar-val" style="color:#f0c860;">2</div><div class="bar" style="height:80px;background:linear-gradient(180deg,#f0c860,#8a7030);"></div><div class="bar-lbl">arch</div></div>
+      <div class="bar-group"><div class="bar-val" style="color:#d44;">2</div><div class="bar" style="height:80px;background:linear-gradient(180deg,#d44,#6a2020);"></div><div class="bar-lbl">sec</div></div>
+      <div class="bar-group"><div class="bar-val" style="color:#5bc0eb;">2</div><div class="bar" style="height:80px;background:linear-gradient(180deg,#5bc0eb,#2a6080);"></div><div class="bar-lbl">ops</div></div>
+      <div class="bar-group"><div class="bar-val" style="color:rgba(232,168,56,.15);background:rgba(26,30,46,.3);border-radius:3px;padding:0 4px;">0</div><div class="bar" style="height:4px;background:rgba(26,30,46,.3);"></div><div class="bar-lbl">testing</div></div>
+      <div class="bar-group"><div class="bar-val" style="color:rgba(232,168,56,.15);background:rgba(26,30,46,.3);border-radius:3px;padding:0 4px;">0</div><div class="bar" style="height:4px;background:rgba(26,30,46,.3);"></div><div class="bar-lbl">compliance</div></div>
+    </div>
+    <div class="chain-list" style="margin-top:6px;">
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">If any single agent goes down</div><div class="chain-text">3 topics have <strong>one owner</strong>. arch-agent = architecture, ops-agent = deployment, sec-agent = security. No backups. No cross-training. <strong class="hl-red">~3 weeks</strong> to reconstruct each lost topic.</div></div></div>
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">The cost of that</div><div class="chain-text"><strong class="hl-red">~$36,000 per agent loss event</strong> (2 engineers × 3 weeks × $150/h). At 25% amnesia score, you're 1/4 of the way to a critical loss.</div></div></div>
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">Counter-intuitive</div><div class="chain-text">Adding more agents <strong>increases</strong> amnesia risk if they each write to new single-owner topics. You need cross-training <span class="hl-gold">before</span> scaling headcount.</div></div></div>
+    </div>
+  </div>
+
+  <!-- COL 3: DECISIONS + ALERTS -->
+  <div class="panel">
+    <div class="panel-title"><span class="accent"></span> Decision Intelligence · <span style="color:rgba(208,216,232,.15);">5 decisions · 3 agents</span></div>
+
+    <div class="alert-bar alert-amber"><span class="aicon">📊</span><span class="atext"><strong>arch-agent</strong> dominates decision-making — 3 of 5 decisions (<strong>60%</strong>)</span><span class="avalue">bottleneck</span></div>
+    <div class="alert-bar alert-red"><span class="aicon">🎯</span><span class="atext"><strong>80% of decisions have no tracked outcome.</strong> You can't measure decision quality without outcomes.</span><span class="avalue">4 untracked</span></div>
+    <div class="alert-bar alert-amber"><span class="aicon">📝</span><span class="atext"><strong>100% of decisions lack rationale.</strong> No reasoning documented. Post-hoc analysis impossible.</span><span class="avalue">5 missing</span></div>
+
+    <div class="chain-list">
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">At current rate</div><div class="chain-text">By Q3: ~25 decisions total. Only ~5 with outcomes. You'll have <strong class="hl-red">20 decisions with zero quality data</strong>.</div></div></div>
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">Hidden risk</div><div class="chain-text">arch-agent is a <strong>single point of failure for decisions</strong> (60% share). If arch-agent's judgment is wrong on 1 of 3 decisions, the error cascades through all downstream work with no traceability.</div></div></div>
+      <div class="chain-item"><span class="chain-arr">→</span><div><div class="chain-label">Single highest-leverage fix</div><div class="chain-text">Add outcome tracking + rationale to every decision write. 2 lines of code. Within 2 weeks you'd have statistically meaningful decision quality data. <span class="hl-green">Cost: ~0.5 engineer-hours. Upside: 4x decision quality visibility.</span></div></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="foot">GRID MEMORY COMMAND CENTER · BUSINESS INTELLIGENCE LAYER · DATA FROM LOCALHOST:9090</div>
+</div>
+</body>
+</html>
