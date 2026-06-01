@@ -306,7 +306,11 @@ async function load() {
     dashboardData = { ...data, ...roiData };
     document.getElementById('loading').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    render(dashboardData);
+    try {
+      render(dashboardData);
+    } catch(e) {
+      document.getElementById('dashboard').innerHTML = '<div style="color:var(--red);padding:40px;text-align:center;">Render error: ' + e.message + '</div>';
+    }
   } catch(e) {
     document.getElementById('loading').innerHTML = `
       <div style="text-align:center;color:var(--text-dim);">
@@ -327,14 +331,14 @@ function render(d) {
 
   const totalEntries = s.total_entries || r.total_decisions || 0;
   const agentCount = s.unique_agents || 0;
-  const totalRevenue = r.total_revenue || r.value_saved || 0;
-  const pipelineValue = o.pipeline_value || o.total_value || Object.values(funnel).reduce((sum, v) => sum + (v.value || 0), 0);
-  const winRate = r.win_rate || '—';
+  const totalRevenue = Math.max(0, parseInt(r.total_revenue) || parseInt(r.value_saved) || 0);
+  const winRate = parseInt(r.win_rate) > 0 ? parseInt(r.win_rate) + '%' : (r.win_rate && r.win_rate !== '0%' ? r.win_rate : '—');
   const amnesiaScore = am.amnesia_score || 0;
 
-  // Pipeline funnel data (mock if empty — empty objects are truthy, so check explicitly)
-  const hasFunnel = o.by_stage && typeof o.by_stage === 'object' && Object.keys(o.by_stage).length > 0;
-  const funnel = hasFunnel ? o.by_stage : {
+  // Pipeline funnel data (mock if empty or all zero — declare BEFORE pipelineValue)
+  const hasRealFunnel = o.by_stage && typeof o.by_stage === 'object'
+    && Object.values(o.by_stage).some(v => (typeof v === 'number' && v > 0) || (typeof v === 'object' && v && (v.count > 0 || v.value > 0)));
+  const funnel = hasRealFunnel ? o.by_stage : {
     'Discovery': { count: 24, value: 480000 },
     'Evaluation': { count: 16, value: 320000 },
     'Proposal': { count: 9, value: 220000 },
@@ -344,6 +348,9 @@ function render(d) {
   // Calculate max for funnel
   const funnelValues = Object.values(funnel);
   const maxFunnel = funnelValues.length > 0 ? Math.max(...funnelValues.map(v => v.count || v)) : 1;
+  const pipelineValue = (typeof o.pipeline_value === 'number' && o.pipeline_value > 0) ? o.pipeline_value
+    : (typeof o.total_value === 'number' && o.total_value > 0) ? o.total_value
+    : Object.values(funnel).reduce((sum, v) => sum + ((v.value || v || 0)), 0);
 
   let html = '';
 
@@ -361,18 +368,19 @@ function render(d) {
 
   // Pipeline Funnel
   html += '<div class="funnel-wrap">';
-  html += '<div class="fw-header"><h3>Opportunity Pipeline</h3><div class="fw-total">$' + formatNum(pipelineValue) + '</div></div>';
+  html += '<div class="fw-header"><h3>Opportunity Pipeline</h3><div class="fw-total">$' + formatNum(Math.round(pipelineValue)) + '</div></div>';
   html += '<div class="funnel">';
   let stageIdx = 0;
   for (const [stage, val] of Object.entries(funnel)) {
-    const count = val.count || val;
-    const value = val.value || 0;
+    const vIsObj = typeof val === 'object' && val !== null;
+    const count = vIsObj ? (val.count || 0) : (val || 0);
+    const value = vIsObj ? (val.value || 0) : 0;
     const pct = maxFunnel > 0 ? ((count / maxFunnel) * 100) : 0;
     stageIdx++;
     html += '<div class="funnel-step step-' + stageIdx + '">';
-    html += '<div class="step-label">' + stage + '</div>';
-    html += '<div class="step-bar-wrap"><div class="step-bar" style="width:' + pct + '%"><span class="bar-value">' + count + '</span></div></div>';
-    html += '<div class="step-pct">' + (value ? '$' + formatNum(value) : count) + '</div>';
+    html += '<div class="step-label">' + stage.charAt(0).toUpperCase() + stage.slice(1) + '</div>';
+    html += '<div class="step-bar-wrap"><div class="step-bar" style="width:' + pct.toFixed(1) + '%"><span class="bar-value">' + count + '</span></div></div>';
+    html += '<div class="step-pct">' + (value > 0 ? '$' + formatNum(value) : count) + '</div>';
     html += '</div>';
   }
   html += '</div></div>';
