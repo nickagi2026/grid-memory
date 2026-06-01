@@ -268,6 +268,21 @@ function registerIntelligenceRoutes() {
     }
   });
 
+  registry.register('GET', '/assets/:file', 'analyst', async (req, res, grid, gateway, query, params) => {
+    const safeFile = path.basename(params.file).replace(/[^a-zA-Z0-9._-]/g, '');
+    const filePath = path.join(__dirname, 'docs', 'assets', safeFile);
+    try {
+      const data = fs.readFileSync(filePath);
+      const ext = path.extname(safeFile).toLowerCase();
+      const types = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp', '.mp4': 'video/mp4', '.svg': 'image/svg+xml' };
+      res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream', 'Cache-Control': 'max-age=3600' });
+      res.end(data);
+    } catch (err) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not found');
+    }
+  });
+
   registry.register('GET', '/executive', 'analyst', async (req, res, grid, gateway, query) => {
     const htmlPath = path.join(__dirname, 'dashboard', 'executive.html');
     try {
